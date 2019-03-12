@@ -1,12 +1,20 @@
 import fastText
 import platform
+import configurations
 
 if platform.system() == 'Linux':
-    model = fastText.load_model('/home/sdag/PycharmProjects/thesis/fasttext/fasttext_german_embeddings/cc.de.300.bin')
+    if configurations.LANGUAGE == 'GERMAN':
+        model = fastText.load_model(configurations.LINUX_FASTTEXT_GERMAN_EMBEDDINGS_MODEL_PATH)
+    elif configurations.LANGUAGE == 'ENGLISH':
+        model = fastText.load_model(configurations.LINUX_FASTTEXT_ENGLISH_EMBEDDINGS_MODEL_PATH)
 else:
-    model = fastText.load_model('C:\\Users\\seyit\\PycharmProjects\\thesis\\fasttext\\fasttext_german_embeddings\\cc.de.300.bin')
+    if configurations.LANGUAGE == 'GERMAN':
+        model = fastText.load_model(configurations.WINDOWS_FASTTEXT_GERMAN_EMBEDDINGS_MODEL_PATH)
+    elif configurations.LANGUAGE == 'ENGLISH':
+        model = fastText.load_model(configurations.WINDOWS_FASTTEXT_ENGLISH_EMBEDDINGS_MODEL_PATH)
 
 print('fastText model has been loaded...')
+
 
 def get_fasttext_word_embedding(text):
     return model.get_word_vector(text)

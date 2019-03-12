@@ -1,10 +1,23 @@
 from elmoformanylangs import Embedder
 import platform
+import configurations
 
 if platform.system() == 'Linux':
-    embedder = Embedder('/home/sdag/PycharmProjects/thesis/elmoformanylangs/elmo_german_embeddings')
+    embedder = Embedder(configurations.LINUX_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH)
 else:
-    embedder = Embedder('C:\\Users\\seyit\\PycharmProjects\\thesis\\elmoformanylangs\\elmo_german_embeddings')
+    embedder = Embedder(configurations.WINDOWS_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH)
+
+
+if platform.system() == 'Linux':
+    if configurations.LANGUAGE == 'GERMAN':
+        embedder = Embedder(configurations.LINUX_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH)
+    elif configurations.LANGUAGE == 'ENGLISH':
+        embedder = Embedder(configurations.LINUX_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH)
+else:
+    if configurations.LANGUAGE == 'GERMAN':
+        embedder = Embedder(configurations.WINDOWS_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH)
+    elif configurations.LANGUAGE == 'ENGLISH':
+        embedder = Embedder(configurations.WINDOWS_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH)
 
 
 print('ELMo model has been loaded...')
