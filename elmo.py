@@ -1,6 +1,10 @@
 from elmoformanylangs import Embedder
+import platform
 
-embedder = Embedder('C:\\Users\\seyit\\PycharmProjects\\thesis\\elmoformanylangs\\elmo_german_embeddings')
+if platform.system() == 'Linux':
+    embedder = Embedder('/home/sdag/PycharmProjects/thesis/elmoformanylangs/elmo_german_embeddings')
+else:
+    embedder = Embedder('C:\\Users\\seyit\\PycharmProjects\\thesis\\elmoformanylangs\\elmo_german_embeddings')
 
 
 def get_elmo_embedding(text):
