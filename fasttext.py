@@ -16,5 +16,5 @@ else:
 print('fastText model has been loaded...')
 
 
-def get_fasttext_word_embedding(text):
+def __get_fasttext_word_embedding(text):
     return model.get_word_vector(text)

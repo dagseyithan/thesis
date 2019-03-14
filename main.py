@@ -1,14 +1,16 @@
 from keras.layers import Dense, Conv3D
 from keras.models import Sequential
-from fasttext import get_fasttext_word_embedding
-from elmo import get_elmo_word_embedding
-from text_utilities import get_ngrams
-from scipy.spatial import distance
+from text_utilities import get_ngrams, get_fasttext_similarity, get_elmo_similarity
+
 
 model = Sequential()
 
+print('fastText:')
+print(get_fasttext_similarity( '2014', 'year'))
+print(get_fasttext_similarity( 'MVP', 'year'))
+print(get_fasttext_similarity( 'win', 'won'))
+print('elmo:')
+print(get_elmo_similarity( '2014', 'year'))
+print(get_elmo_similarity( 'MVP', 'year'))
+print(get_elmo_similarity( 'win', 'won'))
 
-print(1.0 - distance.cosine(get_fasttext_word_embedding('gehen'), get_fasttext_word_embedding('gehen')))
-print(1.0 - distance.cosine(get_fasttext_word_embedding('gehen'), get_fasttext_word_embedding('ging')))
-print(1.0 - distance.cosine(get_elmo_word_embedding('gehen'), get_elmo_word_embedding('gehen')))
-print(1.0 - distance.cosine(get_elmo_word_embedding('gehen'), get_elmo_word_embedding('gegangen')))

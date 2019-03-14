@@ -16,7 +16,7 @@ else:
 
 print('ELMo model has been loaded...')
 
-def get_elmo_word_embedding(text):
+def __get_elmo_word_embedding(text):
     '''
     output_layer: the target layer to output.
 

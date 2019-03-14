@@ -1,5 +1,7 @@
 from nltk import ngrams
-
+from fasttext import __get_fasttext_word_embedding
+from elmo import __get_elmo_word_embedding
+from scipy.spatial import distance
 
 
 def get_ngrams(text, n=1):
@@ -11,3 +13,22 @@ def get_ngrams(text, n=1):
     '''
 
     return list(list(gram) for gram in ngrams(text.split(), n))
+
+
+def get_fasttext_similarity(worda = None, wordb = None):
+    if worda == None or wordb == None:
+        print('comparison with null value(s)!')
+        return None
+    else:
+        return 1.0 - distance.cosine(__get_fasttext_word_embedding(worda), __get_fasttext_word_embedding(wordb))
+
+
+def get_elmo_similarity(worda = None, wordb = None):
+    if worda == None or wordb == None:
+        print('comparison with null value(s)!')
+        return None
+    else:
+        return 1.0 - distance.cosine(__get_elmo_word_embedding(worda), __get_elmo_word_embedding(wordb))
+
+
+
