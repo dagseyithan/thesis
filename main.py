@@ -1,5 +1,3 @@
-from keras.layers import Dense, Conv3D
-from keras.models import Sequential
 import text_utilities as tu
 from nltk.corpus import udhr
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -8,6 +6,7 @@ import nltk
 import re
 import datetime, sys
 from random import randint
+import configurations
 
 
 stemmer = SnowballStemmer("german")
@@ -15,6 +14,11 @@ stemmer = SnowballStemmer("german")
 nltk.download('udhr')
 nltk.download('udhr2')
 nltk.download('punkt')
+
+corp = nltk.corpus.ConllCorpusReader('.', configurations.WINDOWS_TIGER_CORPUS_PATH,
+                                     ['ignore', 'words', 'ignore', 'ignore', 'pos'], encoding='utf-8')
+tagged_sents = list(corp.tagged_sents())
+print(tagged_sents)
 
 def tokenize_and_stem(text):
     tokens = [word for sent in nltk.sent_tokenize(text) for word in nltk.word_tokenize(sent)]

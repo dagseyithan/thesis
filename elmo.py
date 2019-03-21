@@ -14,7 +14,7 @@ else:
         embedder = Embedder(configurations.WINDOWS_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH)
 
 
-print('ELMo model has been loaded...')
+print('ELMo ' + configurations.LANGUAGE + ' model has been loaded...')
 
 def __get_elmo_word_embedding(text):
     '''

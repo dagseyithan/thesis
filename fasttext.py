@@ -14,7 +14,7 @@ else:
     elif configurations.LANGUAGE == 'ENGLISH':
         model = fastText.load_model(configurations.WINDOWS_FASTTEXT_ENGLISH_EMBEDDINGS_MODEL_PATH)
 
-print('fastText model has been loaded...')
+print('fastText ' + configurations.LANGUAGE + ' model has been loaded...')
 
 
 def __get_fasttext_word_embedding(text):
