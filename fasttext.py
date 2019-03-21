@@ -1,6 +1,6 @@
 import fastText
 import platform
-import configurations
+from config import configurations
 import numpy as np
 
 if platform.system() == 'Linux':

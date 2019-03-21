@@ -1,6 +1,6 @@
 from elmoformanylangs import Embedder
 import platform
-import configurations
+from config import configurations
 
 if platform.system() == 'Linux':
     if configurations.LANGUAGE == 'GERMAN':
