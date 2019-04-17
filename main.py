@@ -17,10 +17,11 @@ nltk.download('stopwords')
 
 stop_words = nltk.corpus.stopwords.words('german') + list(punctuation)
 
-corp = nltk.corpus.ConllCorpusReader('data/', configurations.TIGER_CORPUS_FILE, ['ignore', 'words', 'ignore', 'ignore', 'pos'], encoding='utf-8')
+corp = nltk.corpus.ConllCorpusReader('tigercorpus/', configurations.TIGER_CORPUS_FILE, ['ignore', 'words', 'ignore', 'ignore', 'pos'], encoding='utf-8')
 words = list(corp.words())
 sents = list(corp.sents())
 
+print(sents)
 vocabulary = set()
 words = [w.lower() for w in words]
 vocabulary.update([w for w in words if w not in stop_words and not w.isdigit()])
@@ -43,17 +44,22 @@ print(word_idf[word_index['tag']])
 
 tfidf = TfidfVectorizer(tokenizer=tu.word_tokenize, stop_words=stop_words, decode_error='ignore')
 print('building term-document matrix... [process started: ' + str(datetime.datetime.now()) + ']')
-tdm = tfidf.fit_transform([corp.raw()])
+tdm = tfidf.fit_transform(' '.join(sent) for sent in corp.sents())
 print('done! [process finished: ' + str(datetime.datetime.now()) + ']')
 print(tdm.shape)
 
 feature_names = tfidf.get_feature_names()
+
 print('TDM contains ' + str(len(feature_names)) + ' terms and ' + str(tdm.shape[0]) + ' documents')
 
-print(tdm[0, tfidf.vocabulary_['angela']]*1000)
-print(tdm[0, tfidf.vocabulary_['merkel']]*1000)
-print(tdm[0, tfidf.vocabulary_['türkei']]*1000)
-print(tdm[0, tfidf.vocabulary_['deutschland']]*1000)
+scores = tu.save_tfidf_scores(tfidf, tdm)
+
+print(scores['angela'])
+print(scores['geschlecht'])
+print(scores['türkei'])
+print(scores['deutschland'])
+print(scores['deutlich'])
+
 
 
 '''
