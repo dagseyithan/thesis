@@ -20,3 +20,4 @@ WINDOWS_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH = config['PATH_WINDOWS']['elmo_englis
 WINDOWS_TIGER_CORPUS_PATH = config['PATH_WINDOWS']['tiger_corpus_path']
 LINUX_TIGER_CORPUS_PATH = config['PATH_LINUX']['tiger_corpus_path']
 WINDOWS_ORIGINAL_PRODUCTS_FILE_PATH = config['PATH_WINDOWS']['original_products_file_path']
+LINUX_ORIGINAL_PRODUCTS_FILE_PATH = config['PATH_LINUX']['original_products_file_path']
