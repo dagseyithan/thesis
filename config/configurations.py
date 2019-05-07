@@ -7,6 +7,9 @@ config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.i
 config.read(config_path)
 
 LANGUAGE = config['GENERAL']['language']
+FASTTEXT_VECTOR_LENGTH = int(config['GENERAL']['fasttext_vector_length'])
+ELMO_VECTOR_LENGTH = int(config['GENERAL']['elmo_vector_length'])
+MAX_TEXT_WORD_LENGTH = int(config['GENERAL']['max_text_word_length'])
 TIGER_CORPUS_FILE = config['GENERAL']['tiger_corpus_file']
 
 LINUX_FASTTEXT_GERMAN_EMBEDDINGS_MODEL_PATH = config['PATH_LINUX']['fasttext_german_embeddings_model_path']

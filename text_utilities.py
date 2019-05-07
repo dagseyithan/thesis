@@ -185,18 +185,20 @@ def pre_process(text):
     text = text.lower()
     text = remove_punctuation(text)
     text = separate_numerals(text)
-    text = remove_single_characters(text)
-    if has_units(text):
-        text = remove_units(text)
+    print(text)
+    #text = remove_single_characters(text)
+    #if has_units(text):
+        #text = remove_units(text)
+    text = split_compounds(text)
+    simply_processed_text = text
     text, numerals = extract_numerals(text)
     extracted = text
     if text == '' or text == ' ': #extremely rare but sometimes nltk.postagger missclassifies POS tags, leading to erroneous extraction.
         return ''
-    text = split_compounds(text)
     for numeral in numerals:
         text = text + ' ' + str(numeral)
 
-    return text, extracted, numerals
+    return simply_processed_text, extracted, numerals
 
 
 def get_single_average_sentence_vector(text):
