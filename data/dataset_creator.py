@@ -1,14 +1,10 @@
-import pandas
-from config import configurations
-import text_utilities as tu
-import numpy as np
 import random
-from data.datareader import readdata
-from elmo import __get_elmo_sentence_embedding, __get_elmo_word_embedding
+from data.datareader import read_original_products_data
 
 
 
-Data = readdata()
+
+Data = read_original_products_data()
 ProductX, ProductY = Data[Data.columns[0]], Data[Data.columns[4]]
 
 with open('dataset.csv','w', encoding='utf-8') as file:

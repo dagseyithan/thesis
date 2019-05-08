@@ -15,4 +15,4 @@ def read_original_products_data():
     return pandas.read_csv(original_file, header=1, encoding='utf-8')
 
 def read_dataset_data():
-    return pandas.read_csv(dataset_file, header=1, encoding='utf-8')
+    return pandas.read_csv(dataset_file, header=0, sep=';', encoding='utf-8')

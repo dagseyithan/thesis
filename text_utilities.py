@@ -209,7 +209,6 @@ def pre_process_single_return(text):
     text = text.lower()
     text = remove_punctuation(text)
     text = separate_numerals(text)
-    print(text)
     #text = remove_single_characters(text)
     #if has_units(text):
         #text = remove_units(text)
