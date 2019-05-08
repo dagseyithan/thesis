@@ -200,6 +200,30 @@ def pre_process(text):
 
     return simply_processed_text, extracted, numerals
 
+def pre_process_single_return(text):
+    '''
+    function for preprocessing given string.
+    :param text: strıng to be preprocessed
+    :return: preprocessed string
+    '''
+    text = text.lower()
+    text = remove_punctuation(text)
+    text = separate_numerals(text)
+    print(text)
+    #text = remove_single_characters(text)
+    #if has_units(text):
+        #text = remove_units(text)
+    text = split_compounds(text)
+    simply_processed_text = text
+    text, numerals = extract_numerals(text)
+    extracted = text
+    if text == '' or text == ' ': #extremely rare but sometimes nltk.postagger missclassifies POS tags, leading to erroneous extraction.
+        return ''
+    for numeral in numerals:
+        text = text + ' ' + str(numeral)
+
+    return simply_processed_text
+
 
 def get_single_average_sentence_vector(text):
     return np.array(__get_fasttext_sentence_embedding(text))

@@ -1,17 +1,13 @@
-from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input
-from keras.models import Sequential, Model
-from keras.utils import Sequence
+from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten
+from keras.models import Sequential
 import numpy as np
 import pprint as pp
-import tensorflow as tf
 import text_utilities as tu
-from data.datareader import read_original_products_data, read_dataset_data
+from data.datareader import readdata
 from keras import backend as K
 from elmo import __get_elmo_sentence_embedding, __get_elmo_word_embedding
 from config.configurations import MAX_TEXT_WORD_LENGTH, ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH
 
-EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
-COMBINATION_COUNT = 1944
 
 def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):
     combined = []
@@ -27,22 +23,8 @@ def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, windo
     print(combined.shape)
     return np.reshape(combined, (combined.shape[0] * combined.shape[1], word_embedding_length)), combined.shape[0] * combined.shape[1]
 
-class DataGenerator(Sequence):
 
-    def __init__(self, x_set, y_set, batch_size):
-        self.x, self.y = x_set, y_set
-        self.batch_size = batch_size
-
-    def __len__(self):
-        return int(np.ceil(len(self.x) / float(self.batch_size)))
-
-    def __getitem__(self, idx):
-        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-
-        return np.array([resize(imread(file_name), (200, 200)) for file_name in batch_x]), np.array(batch_y)
-
-
+EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
 
 
 input1 = np.zeros((MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), dtype=float)
@@ -105,12 +87,13 @@ def hinge_loss():
 
 
 
+
 def create_network(input_shape, combination_count):
 
     model = Sequential()
     model.add(BatchNormalization(input_shape = input_shape))
     model.add(Conv1D(filters=100, kernel_size=3, kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
-    model.add(Reshape((COMBINATION_COUNT, 10, 10)))
+    model.add(Reshape((combination_count, 10, 10)))
     model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
@@ -125,19 +108,23 @@ def create_network(input_shape, combination_count):
     return model
 
 
-pos_in = Input(shape=(combination_count, EMBEDDING_LENGTH))
-neg_in = Input(shape=(combination_count, EMBEDDING_LENGTH))
+model = create_network(input_shape=(None, EMBEDDING_LENGTH), combination_count = combination_count)
 
-net = create_network(input_shape=(None, EMBEDDING_LENGTH), combination_count = combination_count)
+#model = Sequential()
 
-pos_out = net(pos_in)
-neg_out = net(neg_in)
-net_out = [pos_out, neg_out]
+#conv = Conv1D(filters=400, kernel_size=3, kernel_initializer='ones', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation=None, padding='same')
 
-model = Model(inputs=[pos_in, neg_in], outputs=net_out)
-model.compile(optimizer='adam', loss=hinge_loss)
+#model.add(BatchNormalization(input_shape=(None, EMBEDDING_LENGTH)))
+#model.add(conv)
+
+model.compile(optimizer='rmsprop', loss='mean_squared_error')
+model.summary()
+
+get_layer_output = K.function([model.layers[0].input], [model.layers[12].output])
 
 
-model.fit(train_data, y_dummie, batch_size=256, epochs=10)
+layer_output = get_layer_output([sent1])[0]
 
-
+print(layer_output)
+#layer_output = np.reshape(layer_output, (1, layer_output.shape[1], 20, 20))
+print(layer_output.shape)
