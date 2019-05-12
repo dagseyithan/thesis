@@ -1,9 +1,8 @@
-from keras.utils import Sequence
+from keras.utils.data_utils import Sequence
 import numpy as np
 from data.datareader import read_dataset_data
 from texttovector import get_ready_vector
 from config.configurations import ELMO_VECTOR_LENGTH, MAX_TEXT_WORD_LENGTH
-
 
 
 def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):
@@ -20,7 +19,7 @@ def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, windo
     return np.reshape(combined, (combined.shape[0] * combined.shape[1], word_embedding_length))
 
 
-class DataGenerator_for_Arc2(Sequence):
+class Native_DataGenerator_for_Arc2(Sequence):
 
     def __init__(self, batch_size):
         data = read_dataset_data()
@@ -37,6 +36,33 @@ class DataGenerator_for_Arc2(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        input, y = np.array([[get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]), max_text_length=MAX_TEXT_WORD_LENGTH, word_embedding_length=ELMO_VECTOR_LENGTH),
-                 get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]), max_text_length=MAX_TEXT_WORD_LENGTH, word_embedding_length=ELMO_VECTOR_LENGTH)] for sample in batch_x]), batch_y
-        return input, y
+        anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+        anchor_neg = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+
+        return [anchor_pos, anchor_neg], batch_y
+
+
+def DataGenerator_for_Arc2(batch_size):
+    data = read_dataset_data()
+    anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
+    x = np.column_stack((anchor, pos, neg))
+    y = np.zeros((x.shape[0]), dtype=float)
+    DATASET_SIZE = x.shape[0]
+
+    while True:
+        for i in range(0, DATASET_SIZE):
+            batch_x = x[i * batch_size:(i + 1) * batch_size]
+            batch_y = y[i * batch_size:(i + 1) * batch_size]
+
+            anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+            anchor_neg = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+
+            yield [anchor_pos, anchor_neg], np.array(batch_y)

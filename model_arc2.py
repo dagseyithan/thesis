@@ -1,18 +1,35 @@
-from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input
+from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, Lambda
 from keras.models import Sequential, Model
+import tensorflow as tf
+import keras.backend as K
 import numpy as np
 from config.configurations import MAX_TEXT_WORD_LENGTH, ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH
-from data.generator import DataGenerator_for_Arc2
+from data.generator import Native_DataGenerator_for_Arc2
+from data.datareader import read_dataset_data
+from texttovector import get_ready_vector
 
 
 EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
 COMBINATION_COUNT = 1944
+BATCH_SIZE = 5
 
 
-def hinge_loss():
-    return 0
+def hinge_loss(y_true, y_pred, alpha = 0.4):
 
+    slice_pos = lambda x: x[0:5,:]
+    slice_neg = lambda x: x[5:10,:]
 
+    positive = Lambda(slice_pos, output_shape=(BATCH_SIZE,1))(y_pred)
+    negative = Lambda(slice_neg, output_shape=(BATCH_SIZE,1))(y_pred)
+
+    #positive = K.reshape(positive, (BATCH_SIZE, ))
+    #negative = K.reshape(negative, (BATCH_SIZE, ))
+
+    basic_loss = tf.reduce_sum(positive, axis=0) - tf.reduce_sum(negative, axis=0) + alpha
+
+    loss = tf.maximum(basic_loss, 0.0)
+
+    return loss
 
 def create_network(input_shape):
 
@@ -41,13 +58,15 @@ net = create_network(input_shape=(None, EMBEDDING_LENGTH))
 
 pos_out = net(pos_in)
 neg_out = net(neg_in)
-net_out = [pos_out, neg_out]
+net_out = concatenate([pos_out, neg_out], axis=0)
+
 
 model = Model(inputs=[pos_in, neg_in], outputs=net_out)
-model.compile(optimizer='adam', loss='mse')
+model.compile(optimizer='adam', loss=hinge_loss)
 
-data_generator = DataGenerator_for_Arc2(batch_size=5)
 
-model.fit_generator(generator=data_generator, shuffle=True, epochs=10)
+data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
+
+model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
 
 

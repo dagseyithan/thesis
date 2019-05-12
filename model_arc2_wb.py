@@ -3,7 +3,6 @@ from keras.models import Sequential
 import numpy as np
 import pprint as pp
 import text_utilities as tu
-from data.datareader import readdata
 from keras import backend as K
 from elmo import __get_elmo_sentence_embedding, __get_elmo_word_embedding
 from config.configurations import MAX_TEXT_WORD_LENGTH, ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH
@@ -21,10 +20,12 @@ def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, windo
         i += 1
     combined = np.array(combined)
     print(combined.shape)
-    return np.reshape(combined, (combined.shape[0] * combined.shape[1], word_embedding_length)), combined.shape[0] * combined.shape[1]
+    return np.reshape(combined, (combined.shape[0] * combined.shape[1], word_embedding_length))
 
 
 EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
+
+COMBINATION_COUNT = 1944
 
 
 input1 = np.zeros((MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), dtype=float)
@@ -54,8 +55,8 @@ input3[:text3_word_length] = text3_embedding[:MAX_TEXT_WORD_LENGTH]
 
 #print(input1.size)
 #combined = get_combinations(text1_embedding, text2_embedding, max_text_length = 6, embedding_length = 3, window_size = 3)
-combined, combination_count = get_combinations(input1, input2, max_text_length = MAX_TEXT_WORD_LENGTH, word_embedding_length = EMBEDDING_LENGTH, window_size = 3)
-#combined2 = get_combinations(input1, input3, max_text_length = MAX_TEXT_WORD_LENGTH, word_embedding_length = EMBEDDING_LENGTH, window_size = 3)
+combined = get_combinations(input1, input2, max_text_length = MAX_TEXT_WORD_LENGTH, word_embedding_length = EMBEDDING_LENGTH, window_size = 3)
+combined2 = get_combinations(input1, input3, max_text_length = MAX_TEXT_WORD_LENGTH, word_embedding_length = EMBEDDING_LENGTH, window_size = 3)
 
 pp.pprint(combined)
 print(combined.shape)
@@ -73,11 +74,11 @@ print(text)
 embeddingsent = __get_elmo_sentence_embedding("zwei wörter")
 
 '''
-#combined = np.reshape(combined, (1, 1, combined.shape[0], combined.shape[1]))
-#combined2 = np.reshape(combined2, (1, 1, combined2.shape[0], combined2.shape[1]))
-#combined = np.append(combined, combined2, axis=0)
+combined = np.reshape(combined, (1, combined.shape[0], combined.shape[1]))
+combined2 = np.reshape(combined2, (1, combined2.shape[0], combined2.shape[1]))
+combined = np.append(combined, combined2, axis=0)
 sent1 = combined
-sent1 = np.expand_dims(sent1, axis=0)
+#sent1 = np.expand_dims(sent1, axis=0)
 print(sent1.shape)
 
 
@@ -108,7 +109,7 @@ def create_network(input_shape, combination_count):
     return model
 
 
-model = create_network(input_shape=(None, EMBEDDING_LENGTH), combination_count = combination_count)
+model = create_network(input_shape=(None, EMBEDDING_LENGTH), combination_count = COMBINATION_COUNT)
 
 #model = Sequential()
 
