@@ -10,7 +10,7 @@ from texttovector import get_ready_vector
 
 
 EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
-COMBINATION_COUNT = 1944
+COMBINATION_COUNT =  MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 5
 
 
@@ -54,6 +54,7 @@ def create_network(input_shape):
 pos_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
 neg_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
 
+
 net = create_network(input_shape=(None, EMBEDDING_LENGTH))
 
 pos_out = net(pos_in)
@@ -67,6 +68,6 @@ model.compile(optimizer='adam', loss=hinge_loss)
 
 data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
 
-model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
+model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=2)
 
 

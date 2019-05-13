@@ -19,6 +19,10 @@ def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, windo
     return np.reshape(combined, (combined.shape[0] * combined.shape[1], word_embedding_length))
 
 
+def get_concat(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):
+    return np.concatenate((vec_A, vec_B))
+
+
 class Native_DataGenerator_for_Arc2(Sequence):
 
     def __init__(self, batch_size):
@@ -36,10 +40,21 @@ class Native_DataGenerator_for_Arc2(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
+        '''
+
         anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
         anchor_neg = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+        '''
+
+        anchor_pos = np.array([get_concat(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+
+        anchor_neg = np.array([get_concat(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
 
