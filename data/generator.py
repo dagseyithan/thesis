@@ -26,7 +26,7 @@ def get_concat(vec_A, vec_B, max_text_length, word_embedding_length, window_size
 class Native_DataGenerator_for_Arc2(Sequence):
 
     def __init__(self, batch_size):
-        data = read_dataset_data()
+        data = read_dataset_data('train')
         anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
         x_set = np.column_stack((anchor, pos, neg))
         y_set = np.zeros((x_set.shape[0]), dtype=float)
@@ -62,7 +62,7 @@ class Native_DataGenerator_for_Arc2(Sequence):
 
 
 def DataGenerator_for_Arc2(batch_size):
-    data = read_dataset_data()
+    data = read_dataset_data('train')
     anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
     x = np.column_stack((anchor, pos, neg))
     y = np.zeros((x.shape[0]), dtype=float)

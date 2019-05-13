@@ -68,6 +68,6 @@ model.compile(optimizer='adam', loss=hinge_loss)
 
 data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
 
-model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=2)
+model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=20, use_multiprocessing=True)
 
 
