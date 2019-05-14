@@ -2,7 +2,12 @@ from keras.utils.data_utils import Sequence
 import numpy as np
 from data.datareader import read_dataset_data
 from texttovector import get_ready_vector
-from config.configurations import ELMO_VECTOR_LENGTH, MAX_TEXT_WORD_LENGTH
+from config.configurations import ELMO_VECTOR_LENGTH, MAX_TEXT_WORD_LENGTH, EMBEDDER, FASTTEXT_VECTOR_LENGTH
+
+if EMBEDDER == 'FASTTEXT':
+    EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH
+else:
+    EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
 
 
 def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):
@@ -40,24 +45,26 @@ class Native_DataGenerator_for_Arc2(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        '''
+
 
         anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+                                                word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
         anchor_neg = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+                                                word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
+
         '''
 
         anchor_pos = np.array([get_concat(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+                                                word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
 
         anchor_neg = np.array([get_concat(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
-
+                                                word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
+                                                
+        '''
         return [anchor_pos, anchor_neg], batch_y
 
 
@@ -75,9 +82,9 @@ def DataGenerator_for_Arc2(batch_size):
 
             anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                    word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+                                                    word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
             anchor_neg = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                    word_embedding_length=ELMO_VECTOR_LENGTH) for sample in batch_x])
+                                                    word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
 
             yield [anchor_pos, anchor_neg], np.array(batch_y)
