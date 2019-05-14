@@ -10,7 +10,7 @@ def get_ready_vector(text, padding = True, embedder = EMBEDDER):
     text = tu.pre_process_single_return(text)
     text_word_length = len(text.split())
 
-    if embedder == 'ELMO': #CHANGE TO GLOBAL NEEDED
+    if embedder == 'ELMO':
         EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
         embedding = __get_elmo_sentence_embedding(text)
     else:

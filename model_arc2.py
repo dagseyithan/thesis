@@ -13,12 +13,12 @@ from texttovector import get_ready_vector
 
 EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH
 COMBINATION_COUNT =  MAX_TEXT_WORD_LENGTH * 2 #1944
-BATCH_SIZE = 32
+BATCH_SIZE = 30
 
-def hinge_loss(y_true, y_pred, alpha = 0.4):
+def hinge_loss(y_true, y_pred, alpha = 1.0):
 
-    slice_pos = lambda x: x[0:5,:]
-    slice_neg = lambda x: x[5:10,:]
+    slice_pos = lambda x: x[0:BATCH_SIZE,:]
+    slice_neg = lambda x: x[BATCH_SIZE:BATCH_SIZE*2,:]
 
     positive = Lambda(slice_pos, output_shape=(BATCH_SIZE,1))(y_pred)
     negative = Lambda(slice_neg, output_shape=(BATCH_SIZE,1))(y_pred)
@@ -26,16 +26,16 @@ def hinge_loss(y_true, y_pred, alpha = 0.4):
     #positive = K.reshape(positive, (BATCH_SIZE, ))
     #negative = K.reshape(negative, (BATCH_SIZE, ))
 
-    basic_loss = 1.0 + tf.reduce_sum(negative, axis=0) - tf.reduce_sum(positive, axis=0)
+    basic_loss = alpha + negative - positive
 
-    loss = tf.maximum(basic_loss, 0.0)
+    loss = tf.reduce_sum(tf.maximum(basic_loss, 0.0), axis=1)
 
     return loss
 
 def create_network(input_shape):
 
     model = Sequential()
-    #model.add(BatchNormalization(input_shape = input_shape))
+    model.add(BatchNormalization(input_shape = input_shape))
     model.add(Conv1D(filters=16, kernel_size=3, kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
     model.add(Reshape((COMBINATION_COUNT, 4, 4)))
     model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
@@ -45,9 +45,10 @@ def create_network(input_shape):
     #model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     #model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     model.add(Flatten())
+    model.add(BatchNormalization())
     model.add(Dense(activation='relu', units=64, use_bias=True))
     model.add(Dense(activation='relu', units=32, use_bias=True))
-    model.add(Dense(activation='sigmoid', units=1, use_bias=True))
+    model.add(Dense(activation='softplus', units=1, use_bias=True))
 
     return model
 
@@ -64,7 +65,7 @@ net_out = concatenate([pos_out, neg_out], axis=0)
 
 
 model = Model(inputs=[pos_in, neg_in], outputs=net_out)
-model.compile(optimizer=Adam(lr=0.0001),loss=hinge_loss)
+model.compile(optimizer=Adam(lr=0.001), loss=hinge_loss)
 
 
 data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
