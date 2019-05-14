@@ -15,8 +15,7 @@ else:
     EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
 
 COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
-BATCH_SIZE = 100
-DATASET_SIZE = 20946
+BATCH_SIZE = 112
 
 def hinge_loss(y_true, y_pred, alpha = 1.0):
 
@@ -73,6 +72,7 @@ model.compile(optimizer=Adam(lr=0.001), loss=hinge_loss)
 
 data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
 
-model.fit_generator(generator=data_generator, steps_per_epoch=np.floor(DATASET_SIZE/BATCH_SIZE), shuffle=False, epochs=10, workers=1, use_multiprocessing=False)
+model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
+model.save('model_00.h5')
 
 
