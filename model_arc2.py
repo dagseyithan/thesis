@@ -1,5 +1,6 @@
 from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, Lambda
 from keras.models import Sequential, Model
+from keras.optimizers import Adam
 import tensorflow as tf
 import keras.backend as K
 import numpy as np
@@ -9,10 +10,10 @@ from data.datareader import read_dataset_data
 from texttovector import get_ready_vector
 
 
-EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
-COMBINATION_COUNT =  MAX_TEXT_WORD_LENGTH * 2 #1944
-BATCH_SIZE = 5
 
+EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH
+COMBINATION_COUNT =  MAX_TEXT_WORD_LENGTH * 2 #1944
+BATCH_SIZE = 32
 
 def hinge_loss(y_true, y_pred, alpha = 0.4):
 
@@ -25,7 +26,7 @@ def hinge_loss(y_true, y_pred, alpha = 0.4):
     #positive = K.reshape(positive, (BATCH_SIZE, ))
     #negative = K.reshape(negative, (BATCH_SIZE, ))
 
-    basic_loss = tf.reduce_sum(positive, axis=0) - tf.reduce_sum(negative, axis=0) + alpha
+    basic_loss = 1.0 + tf.reduce_sum(negative, axis=0) - tf.reduce_sum(positive, axis=0)
 
     loss = tf.maximum(basic_loss, 0.0)
 
@@ -34,19 +35,19 @@ def hinge_loss(y_true, y_pred, alpha = 0.4):
 def create_network(input_shape):
 
     model = Sequential()
-    model.add(BatchNormalization(input_shape = input_shape))
-    model.add(Conv1D(filters=100, kernel_size=3, kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
-    model.add(Reshape((COMBINATION_COUNT, 10, 10)))
+    #model.add(BatchNormalization(input_shape = input_shape))
+    model.add(Conv1D(filters=16, kernel_size=3, kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
+    model.add(Reshape((COMBINATION_COUNT, 4, 4)))
     model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
-    model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
+    model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format=None))
-    model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
+    #model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
+    #model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     model.add(Flatten())
     model.add(Dense(activation='relu', units=64, use_bias=True))
     model.add(Dense(activation='relu', units=32, use_bias=True))
-    model.add(Dense(activation='softplus', units=1, use_bias=True))
+    model.add(Dense(activation='sigmoid', units=1, use_bias=True))
 
     return model
 
@@ -63,11 +64,11 @@ net_out = concatenate([pos_out, neg_out], axis=0)
 
 
 model = Model(inputs=[pos_in, neg_in], outputs=net_out)
-model.compile(optimizer='adam', loss=hinge_loss)
+model.compile(optimizer=Adam(lr=0.0001),loss=hinge_loss)
 
 
 data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
 
-model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=20, use_multiprocessing=True)
+model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
 
 

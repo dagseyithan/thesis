@@ -12,6 +12,9 @@ from word2number import w2n
 import nltk
 import numpy as np
 
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+
 if configurations.LANGUAGE == 'GERMAN':
     stop_words = stopwords.words('german') + list(punctuation)
 elif configurations.LANGUAGE == 'ENGLISH':
