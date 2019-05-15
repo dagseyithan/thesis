@@ -1,9 +1,9 @@
 import random
-from data.datareader import read_original_products_data, read_dataset_data
+from data_utilities.datareader import read_original_products_data, read_dataset_data
 import h5py
 from config import configurations
 import numpy as np
-from data.generator import get_combinations
+from data_utilities.generator import get_combinations
 from texttovector import get_ready_vector
 
 

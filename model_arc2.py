@@ -2,12 +2,8 @@ from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
 import tensorflow as tf
-import keras.backend as K
-import numpy as np
-from config.configurations import MAX_TEXT_WORD_LENGTH, ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH, EMBEDDER
-from data.generator import Native_DataGenerator_for_Arc2
-from data.datareader import read_dataset_data
-from texttovector import get_ready_vector
+from config.configurations import ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH, EMBEDDER
+from data_utilities.generator import Native_DataGenerator_for_Arc2
 
 if EMBEDDER == 'FASTTEXT':
     EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH

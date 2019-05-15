@@ -1,6 +1,6 @@
 from keras.utils.data_utils import Sequence
 import numpy as np
-from data.datareader import read_dataset_data
+from data_utilities.datareader import read_dataset_data
 from texttovector import get_ready_vector
 from config.configurations import ELMO_VECTOR_LENGTH, MAX_TEXT_WORD_LENGTH, EMBEDDER, FASTTEXT_VECTOR_LENGTH
 
