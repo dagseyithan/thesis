@@ -1,9 +1,11 @@
 from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, Lambda
-from keras.models import Sequential, Model
+from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
 import tensorflow as tf
-from config.configurations import ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH, EMBEDDER
-from data_utilities.generator import Native_DataGenerator_for_Arc2
+from config.configurations import ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH, EMBEDDER, MAX_TEXT_WORD_LENGTH
+from data_utilities.generator import Native_DataGenerator_for_Arc2, get_combinations
+from texttovector import get_ready_vector
+import numpy as np
 
 if EMBEDDER == 'FASTTEXT':
     EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH
@@ -12,6 +14,8 @@ else:
 
 COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 112
+
+TRAIN = False
 
 def hinge_loss(y_true, y_pred, alpha = 1.0):
 
@@ -50,25 +54,38 @@ def create_network(input_shape):
 
     return model
 
-
-pos_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
-neg_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
-
-
-net = create_network(input_shape=(None, EMBEDDING_LENGTH))
-
-pos_out = net(pos_in)
-neg_out = net(neg_in)
-net_out = concatenate([pos_out, neg_out], axis=0)
+if TRAIN:
+    pos_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    neg_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
 
 
-model = Model(inputs=[pos_in, neg_in], outputs=net_out)
-model.compile(optimizer=Adam(lr=0.001), loss=hinge_loss)
+    net = create_network(input_shape=(None, EMBEDDING_LENGTH))
+
+    pos_out = net(pos_in)
+    neg_out = net(neg_in)
+    net_out = concatenate([pos_out, neg_out], axis=0)
 
 
-data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
+    model = Model(inputs=[pos_in, neg_in], outputs=net_out)
+    model.compile(optimizer=Adam(lr=0.001), loss=hinge_loss)
 
-model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
-model.save('model_00.h5')
+
+    data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
+
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
+    model.save('model_arc2_00.h5')
+else:
+    model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
+    model.summary()
+    print(len(model.layers))
+    model.layers.pop(3)
+    model.summary()
+    print(len(model.layers))
+    combined_vector = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Blaues Taschentuch'),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
+    print(combined_vector.shape)
+    print(model.predict([combined_vector, combined_vector]))
+
 
 
