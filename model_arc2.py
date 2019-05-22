@@ -2,17 +2,13 @@ from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
 import tensorflow as tf
-from config.configurations import ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH, EMBEDDER, MAX_TEXT_WORD_LENGTH
+from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 from data_utilities.generator import Native_DataGenerator_for_Arc2, get_combinations
 from texttovector import get_ready_vector
 import numpy as np
 
-if EMBEDDER == 'FASTTEXT':
-    EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH
-else:
-    EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
 
-COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
+COMBINATION_COUNT = MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 112
 
 TRAIN = True
@@ -72,9 +68,9 @@ if TRAIN:
 
     data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
 
-    model = load_model('trained_models/model_arc2_01_sigmoid.h5', custom_objects={'hinge_loss': hinge_loss})
-    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
-    model.save('model_arc2_01_sigmoid.h5')
+    #model = load_model('trained_models/model_arc2_01_sigmoid.h5', custom_objects={'hinge_loss': hinge_loss})
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=20, workers=16, use_multiprocessing=True)
+    model.save('trained_models/model_arc2_02_nocombinations.h5')
 else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
