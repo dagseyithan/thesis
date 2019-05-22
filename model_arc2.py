@@ -15,7 +15,7 @@ else:
 COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 112
 
-TRAIN = False
+TRAIN = True
 
 def hinge_loss(y_true, y_pred, alpha = 1.0):
 
@@ -50,7 +50,7 @@ def create_network(input_shape):
     model.add(BatchNormalization())
     model.add(Dense(activation='relu', units=64, use_bias=True))
     model.add(Dense(activation='relu', units=32, use_bias=True))
-    model.add(Dense(activation='softplus', units=1, use_bias=True))
+    model.add(Dense(activation='sigmoid', units=1, use_bias=True))
 
     return model
 
@@ -67,13 +67,14 @@ if TRAIN:
 
 
     model = Model(inputs=[pos_in, neg_in], outputs=net_out)
-    model.compile(optimizer=Adam(lr=0.001), loss=hinge_loss)
+    model.compile(optimizer=Adam(lr=0.0001), loss=hinge_loss)
 
 
     data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
 
-    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
-    model.save('model_arc2_00.h5')
+    model = load_model('trained_models/model_arc2_01_sigmoid.h5', custom_objects={'hinge_loss': hinge_loss})
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
+    model.save('model_arc2_01_sigmoid.h5')
 else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()

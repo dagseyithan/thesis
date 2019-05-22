@@ -30,11 +30,11 @@ def get_concat(vec_A, vec_B, max_text_length, word_embedding_length, window_size
 
 class Native_DataGenerator_for_Arc2(Sequence):
 
-    def __init__(self, x_set, y_set, batch_size):
-        #data = read_dataset_data('train')
-        #anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
-        #x_set = np.column_stack((anchor[0:201], pos[0:201], neg[0:201]))
-        #y_set = np.zeros((x_set.shape[0]), dtype=float)
+    def __init__(self, batch_size):
+        data = read_dataset_data('train')
+        anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
+        x_set = np.column_stack((anchor, pos, neg))
+        y_set = np.zeros((x_set.shape[0]), dtype=float)
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
 
@@ -45,7 +45,7 @@ class Native_DataGenerator_for_Arc2(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        '''
+
         anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
@@ -63,7 +63,7 @@ class Native_DataGenerator_for_Arc2(Sequence):
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
                                                 
-
+        '''
         return [anchor_pos, anchor_neg], batch_y
 
 
