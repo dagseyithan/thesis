@@ -78,14 +78,24 @@ else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
     print(len(model.layers))
-    model.layers.pop(3)
-    model.summary()
-    print(len(model.layers))
+    #model.layers.pop(3)
+    #model.summary()
+    #print(len(model.layers))
     combined_vector = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Blaues Taschentuch'),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
+
+    combined_vector2 = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Die Schule Schuhe'),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
+
+    combined_vector3 = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Grünes Taschentuch'),
+                                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
     print(combined_vector.shape)
-    print(model.predict([combined_vector, combined_vector]))
+    print(model.predict_on_batch([combined_vector, combined_vector]))
+    print(model.predict_on_batch([combined_vector2, combined_vector2]))
+    print(model.predict_on_batch([combined_vector3, combined_vector3]))
 
 
 

@@ -21,7 +21,7 @@ def __get_fasttext_word_embedding(text):
     return model.get_word_vector(text)
 
 
-def __get_fasttext__average_sentence_embedding(sentence):
+def __get_fasttext_average_sentence_embedding(sentence):
     return __get_fasttext_embeddings_average(__get_fasttext_sentence_embedding(sentence))
 
 
