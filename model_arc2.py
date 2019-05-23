@@ -35,18 +35,20 @@ def create_network(input_shape):
 
     model = Sequential()
     #model.add(BatchNormalization(input_shape = input_shape))
-    model.add(Conv1D(filters=100, kernel_size=3, kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
-    model.add(Reshape((COMBINATION_COUNT, 10, 10)))
-    model.add(Conv2D(filters=40, kernel_size=(3, 3), kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
+    model.add(Conv1D(filters=400, kernel_size=3, kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
+    model.add(Reshape((COMBINATION_COUNT, 20, 20)))
+    model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
-    model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
+    model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     #model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     #model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     model.add(Flatten())
     #model.add(BatchNormalization())
+    model.add(Dense(activation='relu', units=128, use_bias=True))
     model.add(Dense(activation='relu', units=64, use_bias=True))
     model.add(Dense(activation='relu', units=32, use_bias=True))
+    model.add(Dense(activation='relu', units=16, use_bias=True))
     model.add(Dense(activation='softplus', units=1, use_bias=True))
 
     return model
@@ -70,7 +72,7 @@ if TRAIN:
     data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE, mode='combination')
 
     #model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
-    model.fit_generator(generator=data_generator, shuffle=True, epochs=25, workers=16, use_multiprocessing=True)
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
     model.save('trained_models/model_arc2_00.h5')
 else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
