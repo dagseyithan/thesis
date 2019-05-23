@@ -1,6 +1,6 @@
 from keras.utils.data_utils import Sequence
 import numpy as np
-from data_utilities.datareader import read_dataset_data
+from data_utilities.datareader import read_dataset_data, read_original_products_data
 from texttovector import get_ready_vector
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 
@@ -62,6 +62,25 @@ class Native_DataGenerator_for_Arc2(Sequence):
                                                 
 
         return [anchor_pos, anchor_neg], batch_y
+
+
+class Native_Test_DataGenerator_for_Arc2(Sequence):
+
+    def __init__(self, textA):
+        Data = read_original_products_data()
+        textB = Data[Data.columns[4]].to_numpy() #all ProductY
+        self.textA = textA
+        self.x = textB
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        test_vector = np.array(get_combinations(get_ready_vector(self.textA), get_ready_vector(self.x[idx]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=EMBEDDING_LENGTH))
+
+        return [test_vector, test_vector]
 
 
 def DataGenerator_for_Arc2(batch_size):
