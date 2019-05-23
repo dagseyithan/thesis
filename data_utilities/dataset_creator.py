@@ -40,6 +40,8 @@ def create_dataset(run = False):
         file.close()
     return None
 
+
+'''
 def create_preprocessed_dataset():
     F = h5py.File('C:\\Users\\seyit\\PycharmProjects\\thesis\\data\\preprocessed_dataset.h5', "w")
     train_data = F.create_group("train")
@@ -67,7 +69,6 @@ def create_preprocessed_dataset():
         train_pos[i] = anchor_pos
         train_neg[i] = anchor_neg
     return 0
+'''
 
-
-split_dataset(True)
 

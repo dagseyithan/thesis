@@ -12,7 +12,7 @@ import numpy as np
 COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 112
 
-TRAIN = True
+TRAIN = False
 
 def hinge_loss(y_true, y_pred, alpha = 1.0):
 
@@ -77,25 +77,22 @@ if TRAIN:
 else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
-    print(len(model.layers))
-    #model.layers.pop(3)
-    #model.summary()
-    #print(len(model.layers))
-    combined_vector = np.reshape(get_concat(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Blaues Taschentuch'),
-                                                max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
 
-    combined_vector2 = np.reshape(get_concat(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Grünes etwas aber nicht so ganz gut'),
-                                                max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
+def get_similarity_arc2(textA, textB):
+    vector = np.reshape(get_combinations(get_ready_vector(textA), get_ready_vector(textB),
+                                max_text_length=MAX_TEXT_WORD_LENGTH,
+                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
+    return model.predict_on_batch([vector, vector])[0][0]
 
-    combined_vector3 = np.reshape(get_concat(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Grünes Taschentuch'),
-                                                max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
-    print(combined_vector.shape)
-    print(model.predict_on_batch([combined_vector, combined_vector]))
-    print(model.predict_on_batch([combined_vector2, combined_vector2]))
-    print(model.predict_on_batch([combined_vector3, combined_vector3]))
-
+'''
+print(get_similarity_arc2('Unterkonstruktion tepro Pent Roof 6x4 193 x 112 cm, silber', 'Unterk.Pent Roof 6x4für 7116/7209/7236'))
+print(get_similarity_arc2('Unterkonstruktion tepro Pent Roof 6x4 193 x 112 cm, silber', 'Unterkonstruktion tepro Riverton 6x4 192,2 x 112,1 cm, silber'))
+print(get_similarity_arc2('Unterkonstruktion tepro Pent Roof 6x4 193 x 112 cm, silber', 'Feuchtraumkabel NYM-J 3G1,5 10M'))
+print(get_similarity_arc2('Unterkonstruktion tepro Pent Roof 6x4 193 x 112 cm, silber', 'Unterk.Riverton 6x4 HAUSTYP1/7124/7240'))
+print(get_similarity_arc2('Unterkonstruktion tepro Riverton 6x4 192,2 x 112,1 cm, silber', 'Unterk.Pent Roof 6x4für 7116/7209/7236'))
+print(get_similarity_arc2('Unterkonstruktion tepro Riverton 6x4 192,2 x 112,1 cm, silber', 'Unterk.Riverton 6x4 HAUSTYP1/7124/7240'))
+print(get_similarity_arc2('Unterk.Riverton 6x4 HAUSTYP1/7124/7240', 'Unterkonstruktion tepro Pent Roof 6x4 193 x 112 cm, silber'))
+print(get_similarity_arc2('Unterk.Riverton 6x4 HAUSTYP1/7124/7240', 'Unterkonstruktion tepro Riverton 6x4 192,2 x 112,1 cm, silber'))
+'''
 
 
