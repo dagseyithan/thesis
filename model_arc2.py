@@ -1,14 +1,15 @@
 from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, Lambda
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
+import keras.backend as K
 import tensorflow as tf
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
-from data_utilities.generator import Native_DataGenerator_for_Arc2, get_combinations
+from data_utilities.generator import Native_DataGenerator_for_Arc2, get_combinations, get_concat
 from texttovector import get_ready_vector
 import numpy as np
 
 
-COMBINATION_COUNT = MAX_TEXT_WORD_LENGTH * 2 #1944
+COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 112
 
 TRAIN = True
@@ -26,27 +27,27 @@ def hinge_loss(y_true, y_pred, alpha = 1.0):
 
     basic_loss = alpha + negative - positive
 
-    loss = tf.reduce_sum(tf.maximum(basic_loss, 0.0), axis=1)
+    loss = K.mean(K.maximum(basic_loss, 0.0), axis=-1)
 
     return loss
 
 def create_network(input_shape):
 
     model = Sequential()
-    model.add(BatchNormalization(input_shape = input_shape))
-    model.add(Conv1D(filters=100, kernel_size=3, kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
+    #model.add(BatchNormalization(input_shape = input_shape))
+    model.add(Conv1D(filters=100, kernel_size=3, kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='relu', padding='same'))
     model.add(Reshape((COMBINATION_COUNT, 10, 10)))
-    model.add(Conv2D(filters=40, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
+    model.add(Conv2D(filters=40, kernel_size=(3, 3), kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
-    model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
+    model.add(Conv2D(filters=20, kernel_size=(3, 3), kernel_initializer='glorot_uniform', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     #model.add(Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='truncated_normal', input_shape=(None, EMBEDDING_LENGTH), data_format='channels_first', use_bias=True, activation='relu', padding='same'))
     #model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first'))
     model.add(Flatten())
-    model.add(BatchNormalization())
+    #model.add(BatchNormalization())
     model.add(Dense(activation='relu', units=64, use_bias=True))
     model.add(Dense(activation='relu', units=32, use_bias=True))
-    model.add(Dense(activation='sigmoid', units=1, use_bias=True))
+    model.add(Dense(activation='softplus', units=1, use_bias=True))
 
     return model
 
@@ -66,11 +67,11 @@ if TRAIN:
     model.compile(optimizer=Adam(lr=0.0001), loss=hinge_loss)
 
 
-    data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE)
+    data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE, mode='combination')
 
-    #model = load_model('trained_models/model_arc2_01_sigmoid.h5', custom_objects={'hinge_loss': hinge_loss})
-    model.fit_generator(generator=data_generator, shuffle=True, epochs=20, workers=16, use_multiprocessing=True)
-    model.save('trained_models/model_arc2_02_nocombinations.h5')
+    #model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=25, workers=16, use_multiprocessing=True)
+    model.save('trained_models/model_arc2_00.h5')
 else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
@@ -78,15 +79,15 @@ else:
     #model.layers.pop(3)
     #model.summary()
     #print(len(model.layers))
-    combined_vector = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Blaues Taschentuch'),
+    combined_vector = np.reshape(get_concat(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Blaues Taschentuch'),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
 
-    combined_vector2 = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Die Schule Schuhe'),
+    combined_vector2 = np.reshape(get_concat(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Grünes etwas aber nicht so ganz gut'),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
 
-    combined_vector3 = np.reshape(get_combinations(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Grünes Taschentuch'),
+    combined_vector3 = np.reshape(get_concat(get_ready_vector('Grünes Taschentuch'), get_ready_vector('Grünes Taschentuch'),
                                                 max_text_length=MAX_TEXT_WORD_LENGTH,
                                                 word_embedding_length=EMBEDDING_LENGTH), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
     print(combined_vector.shape)
