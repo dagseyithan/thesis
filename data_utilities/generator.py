@@ -78,12 +78,11 @@ class Native_Test_DataGenerator_for_Arc2(Sequence):
         return len(self.x)
 
     def __getitem__(self, idx):
-        if len(self.x[idx].split()) > 1:
-            test_vector = np.reshape(np.array(get_combinations(get_ready_vector(self.textA), get_ready_vector(self.x[idx]),
+        test_vector = np.reshape(np.array(get_combinations(get_ready_vector(self.textA), get_ready_vector(self.x[idx]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
                                                     word_embedding_length=EMBEDDING_LENGTH)), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
 
-            return [test_vector, test_vector]
+        return [test_vector, test_vector]
 
 
 def DataGenerator_for_Arc2(batch_size):
