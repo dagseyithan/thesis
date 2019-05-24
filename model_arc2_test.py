@@ -15,9 +15,16 @@ ProductY = Data[Data.columns[4]].to_numpy()
 test = 'Teppich MICHALSKY München anthrazit 133x190 cm'
 
 
-results = model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test), verbose=0, workers=16, use_multiprocessing=False)
-
+results = model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test),verbose=1, workers=16, use_multiprocessing=True)
 
 pp.pprint(results)
+print(results.shape)
+results = np.reshape(results,(len(results)))
+results = [results[idx] for idx in range(0, len(results), 2)]
+indices = np.flip(np.argsort(results))
+print(indices)
+
+for idx in indices[:20]:
+    print(ProductY[idx])
 
 

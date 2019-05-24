@@ -31,7 +31,10 @@ class Native_DataGenerator_for_Arc2(Sequence):
     def __init__(self, batch_size, mode = 'combination'):
         data = read_dataset_data('train')
         anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
-        x_set = np.column_stack((anchor, pos, neg))
+        mirrored_ap = np.append(anchor, pos)
+        mirrored_pa = np.append(pos, anchor)
+        mirrored_nn = np.append(neg, neg)
+        x_set = np.column_stack((mirrored_ap, mirrored_pa, mirrored_nn))
         y_set = np.zeros((x_set.shape[0]), dtype=float)
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size

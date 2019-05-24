@@ -12,7 +12,7 @@ import numpy as np
 COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
 BATCH_SIZE = 112
 
-TRAIN = False
+TRAIN = True
 
 def hinge_loss(y_true, y_pred, alpha = 1.0):
 
@@ -73,7 +73,7 @@ if TRAIN:
 
     #model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
     model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
-    model.save('trained_models/model_arc2_00.h5')
+    model.save('trained_models/model_arc2_01_mirroreddataset.h5')
 else:
     model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
