@@ -4,6 +4,8 @@ from data_utilities.datareader import read_dataset_data, read_original_products_
 from texttovector import get_ready_vector
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 
+COMBINATION_COUNT = 1944
+
 
 
 def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):
@@ -73,14 +75,15 @@ class Native_Test_DataGenerator_for_Arc2(Sequence):
         self.x = textB
 
     def __len__(self):
-        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+        return len(self.x)
 
     def __getitem__(self, idx):
-        test_vector = np.array(get_combinations(get_ready_vector(self.textA), get_ready_vector(self.x[idx]),
+        if len(self.x[idx].split()) > 1:
+            test_vector = np.reshape(np.array(get_combinations(get_ready_vector(self.textA), get_ready_vector(self.x[idx]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
-                                                    word_embedding_length=EMBEDDING_LENGTH))
+                                                    word_embedding_length=EMBEDDING_LENGTH)), (1, COMBINATION_COUNT, EMBEDDING_LENGTH))
 
-        return [test_vector, test_vector]
+            return [test_vector, test_vector]
 
 
 def DataGenerator_for_Arc2(batch_size):

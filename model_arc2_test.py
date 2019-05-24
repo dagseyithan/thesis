@@ -13,11 +13,11 @@ ProductY = Data[Data.columns[4]].to_numpy()
 
 
 test = 'Teppich MICHALSKY München anthrazit 133x190 cm'
-results = []
-
-print(model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test)))
 
 
-results = np.array(results)
+results = model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test), verbose=1, workers=16, use_multiprocessing=True)
+
+
+pp.pprint(results)
 
 
