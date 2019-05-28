@@ -12,6 +12,7 @@ ELMO_VECTOR_LENGTH = int(config['GENERAL']['elmo_vector_length'])
 MAX_TEXT_WORD_LENGTH = int(config['GENERAL']['max_text_word_length'])
 TIGER_CORPUS_FILE = config['GENERAL']['tiger_corpus_file']
 EMBEDDER = config['GENERAL']['embedder']
+BATCH_SIZE = int(config['GENERAL']['batch_size'])
 
 if EMBEDDER == 'FASTTEXT':
     EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH

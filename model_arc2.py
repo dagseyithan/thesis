@@ -3,14 +3,13 @@ from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
 import keras.backend as K
 import tensorflow as tf
-from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
-from data_utilities.generator import Native_DataGenerator_for_Arc2, get_combinations, get_concat
+from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH, BATCH_SIZE
+from data_utilities.generator import Native_DataGenerator_for_Arc2, Native_DataGenerator_for_Arc2_on_batch, get_combinations, get_concat
 from texttovector import get_ready_vector
 import numpy as np
 
 
 COMBINATION_COUNT = 1944 #MAX_TEXT_WORD_LENGTH * 2 #1944
-BATCH_SIZE = 112
 
 TRAIN = True
 
@@ -69,13 +68,13 @@ if TRAIN:
     model.compile(optimizer=Adam(lr=0.0001), loss=hinge_loss)
 
 
-    data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE, mode='combination')
+    data_generator = Native_DataGenerator_for_Arc2_on_batch(batch_size=BATCH_SIZE, mode='combination')
 
     #model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
-    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=16, use_multiprocessing=True)
-    model.save('trained_models/model_arc2_01_mirroreddataset.h5')
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
+    model.save('trained_models/model_arc2_01_ELMO_mirroreddataset.h5')
 else:
-    model = load_model('trained_models/model_arc2_00.h5', custom_objects={'hinge_loss': hinge_loss})
+    model = load_model('trained_models/model_arc2_01_mirroreddataset.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
 
 def get_similarity_arc2(textA, textB):

@@ -215,7 +215,7 @@ def pre_process_single_return(text):
     #text = remove_single_characters(text)
     #if has_units(text):
         #text = remove_units(text)
-    text = split_compounds(text)
+    #text = split_compounds(text)
     simply_processed_text = text
     text, numerals = extract_numerals(text)
     extracted = text

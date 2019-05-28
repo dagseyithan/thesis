@@ -14,17 +14,19 @@ ProductY = Data[Data.columns[4]].to_numpy()
 
 test = 'Teppich MICHALSKY München anthrazit 133x190 cm'
 
+print(get_similarity_arc2(test, 'Teppich MM München 133x190cm anthrazit'))
+print(get_similarity_arc2(test, 'Vliesfotot. 184x248 Brooklyn'))
 
-results = model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test),verbose=1, workers=16, use_multiprocessing=True)
+print(get_similarity_arc2('Teppich MM München 133x190cm anthrazit', test))
+print(get_similarity_arc2('Vliesfotot. 184x248 Brooklyn', test))
 
-pp.pprint(results)
-print(results.shape)
-results = np.reshape(results,(len(results)))
-results = [results[idx] for idx in range(0, len(results), 2)]
-indices = np.flip(np.argsort(results))
-print(indices)
+'''
+results = model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test), verbose=0, workers=1, use_multiprocessing=False)
 
-for idx in indices[:20]:
+indices = np.argsort(-results)
+
+for idx in indices[:10]:
     print(ProductY[idx])
+'''
 
 
