@@ -35,5 +35,5 @@ def __get_elmo_sentence_embedding(text):
     :param text: collection of words
     :return: an array containing elmo embedding of each word in the given collection, respecting the order
     '''
-
-    return np.squeeze(np.array([embedder.sents2elmo([[word]], output_layer=0) for word in text.split()]))
+    words = [[word] for word in text.split()]
+    return np.squeeze(np.array(embedder.sents2elmo(words, output_layer=-1)))
