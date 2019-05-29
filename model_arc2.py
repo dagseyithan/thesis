@@ -15,16 +15,16 @@ TRAIN = True
 
 def hinge_loss(y_true, y_pred, alpha = 1.0):
 
-    slice_pos = lambda x: x[0:BATCH_SIZE,:]
-    slice_neg = lambda x: x[BATCH_SIZE:BATCH_SIZE*2,:]
+    anchor_pos_out = Lambda(lambda x: x[0:BATCH_SIZE,:], output_shape=(BATCH_SIZE,1))(y_pred)
+    pos_anchor_out = Lambda(lambda x: x[BATCH_SIZE:BATCH_SIZE*2,:], output_shape=(BATCH_SIZE,1))(y_pred)
+    anchor_neg_out = Lambda(lambda x: x[BATCH_SIZE*2:BATCH_SIZE*3,:], output_shape=(BATCH_SIZE,1))(y_pred)
+    neg_anchor_out = Lambda(lambda x: x[BATCH_SIZE*3:BATCH_SIZE*4,:], output_shape=(BATCH_SIZE,1))(y_pred)
+    pos_neg_out = Lambda(lambda x: x[BATCH_SIZE*4:BATCH_SIZE*5,:], output_shape=(BATCH_SIZE,1))(y_pred)
+    neg_pos_out = Lambda(lambda x: x[BATCH_SIZE*5:BATCH_SIZE*6,:], output_shape=(BATCH_SIZE,1))(y_pred)
 
-    positive = Lambda(slice_pos, output_shape=(BATCH_SIZE,1))(y_pred)
-    negative = Lambda(slice_neg, output_shape=(BATCH_SIZE,1))(y_pred)
 
-    #positive = K.reshape(positive, (BATCH_SIZE, ))
-    #negative = K.reshape(negative, (BATCH_SIZE, ))
-
-    basic_loss = alpha + negative - positive
+    basic_loss = alpha + (K.sum(anchor_neg_out, axis=-1) * K.sum(neg_anchor_out, axis=-1) * K.sum(pos_neg_out, axis=-1)
+                          * K.sum(neg_pos_out, axis=-1)) - (K.sum(anchor_pos_out, axis=-1) * K.sum(pos_anchor_out, axis=-1))
 
     loss = K.mean(K.maximum(basic_loss, 0.0), axis=-1)
 
@@ -53,26 +53,35 @@ def create_network(input_shape):
     return model
 
 if TRAIN:
-    pos_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
-    neg_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    anchor_pos_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    anchor_neg_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    neg_anchor_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    pos_anchor_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    pos_neg_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
+    neg_pos_in = Input(shape=(COMBINATION_COUNT, EMBEDDING_LENGTH))
 
 
     net = create_network(input_shape=(None, EMBEDDING_LENGTH))
 
-    pos_out = net(pos_in)
-    neg_out = net(neg_in)
-    net_out = concatenate([pos_out, neg_out], axis=0)
+    anchor_pos_out = net(anchor_pos_in)
+    anchor_neg_out = net(anchor_neg_in)
+    neg_anchor_out = net(neg_anchor_in)
+    pos_anchor_out = net(pos_anchor_in)
+    pos_neg_out = net(pos_neg_in)
+    neg_pos_out = net(neg_pos_in)
+
+    net_out = concatenate([anchor_pos_out, pos_anchor_out, anchor_neg_out, neg_anchor_out, pos_neg_out, neg_pos_out], axis=0)
 
 
-    model = Model(inputs=[pos_in, neg_in], outputs=net_out)
+    model = Model(inputs=[anchor_pos_in, anchor_neg_in, neg_anchor_in, pos_anchor_in, pos_neg_in, neg_pos_in], outputs=net_out)
     model.compile(optimizer=Adam(lr=0.0001), loss=hinge_loss)
 
 
-    data_generator = Native_DataGenerator_for_Arc2_on_batch(batch_size=BATCH_SIZE, mode='combination')
+    data_generator = Native_DataGenerator_for_Arc2(batch_size=BATCH_SIZE, mode='combination')
 
     #model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
     model.fit_generator(generator=data_generator, shuffle=True, epochs=10, workers=1, use_multiprocessing=False)
-    model.save('trained_models/model_arc2_01_ELMO_mirroreddataset.h5')
+    model.save('trained_models/model_arc2_00_FastText_allpossiblecombinations.h5')
 else:
     model = load_model('trained_models/model_arc2_01_mirroreddataset.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()

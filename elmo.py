@@ -3,19 +3,20 @@ import platform
 from config import configurations
 import numpy as np
 
-if platform.system() == 'Linux':
-    if configurations.LANGUAGE == 'GERMAN':
-        embedder = Embedder(configurations.LINUX_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
-    elif configurations.LANGUAGE == 'ENGLISH':
-        embedder = Embedder(configurations.LINUX_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
-else:
-    if configurations.LANGUAGE == 'GERMAN':
-        embedder = Embedder(configurations.WINDOWS_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
-    elif configurations.LANGUAGE == 'ENGLISH':
-        embedder = Embedder(configurations.WINDOWS_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
+if configurations.EMBEDDER == 'ELMO':
+    if platform.system() == 'Linux':
+        if configurations.LANGUAGE == 'GERMAN':
+            embedder = Embedder(configurations.LINUX_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
+        elif configurations.LANGUAGE == 'ENGLISH':
+            embedder = Embedder(configurations.LINUX_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
+    else:
+        if configurations.LANGUAGE == 'GERMAN':
+            embedder = Embedder(configurations.WINDOWS_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
+        elif configurations.LANGUAGE == 'ENGLISH':
+            embedder = Embedder(configurations.WINDOWS_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
 
 
-print('ELMo ' + configurations.LANGUAGE + ' model has been loaded...')
+    print('ELMo ' + configurations.LANGUAGE + ' model has been loaded...')
 
 def __get_elmo_word_embedding(word):
     '''

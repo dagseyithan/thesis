@@ -40,10 +40,11 @@ class Native_DataGenerator_for_Arc2(Sequence):
     def __init__(self, batch_size, mode = 'combination'):
         data = read_dataset_data('train')
         anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), data[data.columns[2]].to_numpy()
-        mirrored_ap = np.append(anchor, pos)
-        mirrored_pa = np.append(pos, anchor)
-        mirrored_nn = np.append(neg, neg)
-        x_set = np.column_stack((mirrored_ap, mirrored_pa, mirrored_nn))
+        #mirrored_ap = np.append(anchor, pos)
+        #mirrored_pa = np.append(pos, anchor)
+        #mirrored_nn = np.append(neg, neg)
+        #x_set = np.column_stack((mirrored_ap, mirrored_pa, mirrored_nn))
+        x_set = np.column_stack((anchor, pos, neg))
         y_set = np.zeros((x_set.shape[0]), dtype=float)
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
@@ -61,11 +62,23 @@ class Native_DataGenerator_for_Arc2(Sequence):
             anchor_pos = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
                                                     word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
+            pos_anchor = np.array([get_combinations(get_ready_vector(sample[1]), get_ready_vector(sample[0]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
             anchor_neg = np.array([get_combinations(get_ready_vector(sample[0]), get_ready_vector(sample[2]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
                                                     word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
+            neg_anchor = np.array([get_combinations(get_ready_vector(sample[2]), get_ready_vector(sample[0]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
+            pos_neg = np.array([get_combinations(get_ready_vector(sample[1]), get_ready_vector(sample[2]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
+            neg_pos = np.array([get_combinations(get_ready_vector(sample[2]), get_ready_vector(sample[1]),
+                                                    max_text_length=MAX_TEXT_WORD_LENGTH,
+                                                    word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
 
-        else:
+        else: #TODO
             anchor_pos = np.array([get_concat(get_ready_vector(sample[0]), get_ready_vector(sample[1]),
                                                     max_text_length=MAX_TEXT_WORD_LENGTH,
                                                     word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
@@ -75,7 +88,7 @@ class Native_DataGenerator_for_Arc2(Sequence):
                                                     word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
                                                 
 
-        return [anchor_pos, anchor_neg], batch_y
+        return [anchor_pos, pos_anchor, anchor_neg, neg_anchor, pos_neg, neg_pos], batch_y
 
 
 class Native_DataGenerator_for_Arc2_on_batch(Sequence):

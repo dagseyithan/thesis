@@ -38,7 +38,7 @@ def get_ready_vector_on_batch(texts, padding = True, embedder = EMBEDDER, batch_
         text_word_lengths = [len(text) for text in texts]
         texts_embbedings = __get_elmo_sentence_embedding_on_batch(texts)
     else:
-        texts = [ tu.pre_process_single_return(text) for text in texts]
+        texts = [tu.pre_process_single_return(text) for text in texts]
         text_word_lengths = [len(text.split()) for text in texts]
         texts_embbedings = __get_fasttext_sentence_embedding(texts) #TODO
 
