@@ -35,6 +35,35 @@ def get_concat(vec_A, vec_B, max_text_length, word_embedding_length, window_size
     return np.concatenate((vec_A, vec_B))
 
 
+class Native_DataGenerator_for_IndependentModel(Sequence):
+    def __init__(self, batch_size):
+        data = read_dataset_data('train')
+        anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), \
+                           data[data.columns[2]].to_numpy()
+        mirrored_ap = np.append(anchor, pos)
+        mirrored_pa = np.append(pos, anchor)
+        mirrored_nn = np.append(neg, neg)
+        x_set = np.column_stack((mirrored_ap, mirrored_pa, mirrored_nn))
+        y_set = np.zeros((x_set.shape[0]), dtype=float)
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+
+        anchor_in = np.array([get_ready_vector(sample[0]) for sample in batch_x])
+        pos_in = np.array([get_ready_vector(sample[1]) for sample in batch_x])
+        neg_in = np.array([get_ready_vector(sample[2]) for sample in batch_x])
+
+
+        return [anchor_in, pos_in, neg_in], batch_y
+
+
 class Native_DataGenerator_for_Arc2(Sequence):
 
     def __init__(self, batch_size, mode = 'combination'):
