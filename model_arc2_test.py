@@ -5,6 +5,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import pprint as pp
 from data_utilities.generator import Native_Test_DataGenerator_for_Arc2
+from model_independent import get_similarity_from_independent_model
 
 
 
@@ -14,11 +15,11 @@ ProductY = Data[Data.columns[4]].to_numpy()
 
 test = 'Teppich MICHALSKY München anthrazit 133x190 cm'
 
-print(get_similarity_arc2(test, 'Teppich MM München 133x190cm anthrazit'))
-print(get_similarity_arc2(test, 'Vliesfotot. 184x248 Brooklyn'))
+print(get_similarity_from_independent_model(test, 'Teppich MM München 133x190cm anthrazit'))
+print(get_similarity_from_independent_model(test, 'Vliesfotot. 184x248 Brooklyn'))
 
-print(get_similarity_arc2('Teppich MM München 133x190cm anthrazit', test))
-print(get_similarity_arc2('Vliesfotot. 184x248 Brooklyn', test))
+print(get_similarity_from_independent_model('Teppich MM München 133x190cm anthrazit', test))
+print(get_similarity_from_independent_model('Vliesfotot. 184x248 Brooklyn', test))
 
 '''
 results = model.predict_generator(generator=Native_Test_DataGenerator_for_Arc2(test), verbose=0, workers=1, use_multiprocessing=False)
