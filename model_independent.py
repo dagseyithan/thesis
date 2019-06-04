@@ -35,38 +35,37 @@ def hinge_loss(y_true, y_pred, alpha=1.0, N=3.0, beta=3.0, epsilon=1e-8):
 
 input_a = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
 input_b = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
-conv_out = Conv1D(filters=400, kernel_size=3, kernel_initializer='glorot_uniform',
+conv2k = Conv1D(filters=400, kernel_size=2, kernel_initializer='glorot_uniform',
                   input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='softplus', padding='same')
-conv_out_a = conv_out(input_a)
-conv_out_b = conv_out(input_b)
+conv3k = Conv1D(filters=400, kernel_size=3, kernel_initializer='glorot_uniform',
+                  input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='softplus', padding='same')
+conv2k_out_a = conv2k(input_a)
+conv3k_out_a = conv2k(input_a)
+conv2k_out_b = conv2k(input_b)
+conv3k_out_b = conv2k(input_b)
+concat_convs_a = concatenate([conv2k_out_a, conv3k_out_a], axis=1)
+concat_convs_b = concatenate([conv2k_out_b, conv3k_out_b], axis=1)
 gru_a = Bidirectional(CuDNNGRU(units=100, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
 gru_b = Bidirectional(CuDNNGRU(units=100, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
-gru_a_out_a = gru_a(conv_out_a)
-gru_a_out_b = gru_a(conv_out_b)
-gru_b_out_a = gru_b(conv_out_a)
-gru_b_out_b = gru_b(conv_out_b)
-concat_a = concatenate([gru_a_out_a, gru_b_out_a], axis=1)
-concat_b = concatenate([gru_a_out_b, gru_b_out_b], axis=1)
-concat_a = Reshape((2, MAX_TEXT_WORD_LENGTH, 200))(concat_a)
-concat_b = Reshape((2, MAX_TEXT_WORD_LENGTH, 200))(concat_b)
-#avgpool3ded_a = AveragePooling3D(pool_size=(2, 1, 1), strides=None, padding='valid',
-                                 #input_shape=(1, 2, MAX_TEXT_WORD_LENGTH, 100), data_format='channels_first')(concat_a)
-#avgpool3ded_b = AveragePooling3D(pool_size=(2, 1, 1), strides=None, padding='valid',
-                                 #input_shape=(1, 2, MAX_TEXT_WORD_LENGTH, 100), data_format='channels_first')(concat_b)
-
-#concat_a = K.squeeze(concat_a, axis=1)
-#concat_b = K.squeeze(concat_b, axis=1)
+gru_a_out_a = gru_a(input_a)
+gru_a_out_b = gru_a(input_b)
+gru_b_out_a = gru_b(input_a)
+gru_b_out_b = gru_b(input_b)
+concat_grus_a = concatenate([gru_a_out_a, gru_b_out_a], axis=1)
+concat_grus_b = concatenate([gru_a_out_b, gru_b_out_b], axis=1)
+concat_convs_a = Reshape((2, MAX_TEXT_WORD_LENGTH, 200))(concat_convs_a)
+concat_convs_b = Reshape((2, MAX_TEXT_WORD_LENGTH, 200))(concat_convs_b)
 
 
 def common_network():
-    layers = [Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='glorot_uniform',
-                     input_shape=(2, MAX_TEXT_WORD_LENGTH, 200), data_format='channels_first',
+    layers = [Conv2D(filters=400, kernel_size=(2, 2), kernel_initializer='glorot_uniform',
+                     input_shape=(2, MAX_TEXT_WORD_LENGTH, 400), data_format='channels_first',
                      use_bias=True,activation='softplus', padding='same'),
               MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid',data_format='channels_first'),
-              Conv2D(filters=100, kernel_size=(3, 3), kernel_initializer='glorot_uniform',
+              Conv2D(filters=400, kernel_size=(2, 2), kernel_initializer='glorot_uniform',
                      data_format='channels_first', use_bias=True,
                      activation='softplus', padding='same'),
-              MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first')
+              MaxPooling2D(pool_size=(10, 10), strides=None, padding='valid', data_format='channels_first')
     ]
 
     def shared_layers(x):
@@ -84,12 +83,12 @@ concat_ab = concatenate([a, b], axis=-1)
 
 x = Flatten()(concat_ab)
 #x = BatchNormalization()(x)
-x = Dense(activation='softplus', units=5000, use_bias=True)(x)
-x = Dense(activation='softplus', units=2500, use_bias=True)(x)
-x = Dense(activation='softplus', units=1000, use_bias=True)(x)
+x = Dense(activation='softplus', units=500, use_bias=True)(x)
+x = Dense(activation='softplus', units=250, use_bias=True)(x)
 x = Dense(activation='softplus', units=100, use_bias=True)(x)
 x = Dense(activation='softplus', units=10, use_bias=True)(x)
-out = Dense(activation='softplus', units=1, use_bias=True)(x)
+#x = Dense(activation='softplus', units=10, use_bias=True)(x)
+out = Dense(activation='sigmoid', units=1, use_bias=True)(x)
 
 net = Model([input_a, input_b], out)
 net.summary()
