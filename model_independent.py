@@ -1,5 +1,5 @@
 from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, \
-    Lambda, CuDNNGRU, AveragePooling3D, Bidirectional
+    Lambda, CuDNNGRU, AveragePooling3D, Bidirectional, Softmax, Multiply
 from keras.models import Sequential, Model, load_model
 import keras.callbacks
 from keras.optimizers import Adam, Adadelta
@@ -51,10 +51,10 @@ gru_a_out_a = gru_a(input_a)
 gru_a_out_b = gru_a(input_b)
 gru_b_out_a = gru_b(input_a)
 gru_b_out_b = gru_b(input_b)
-concat_grus_a = concatenate([gru_a_out_a, gru_b_out_a], axis=1)
-concat_grus_b = concatenate([gru_a_out_b, gru_b_out_b], axis=1)
-concat_convs_a = Reshape((2, MAX_TEXT_WORD_LENGTH, 200))(concat_convs_a)
-concat_convs_b = Reshape((2, MAX_TEXT_WORD_LENGTH, 200))(concat_convs_b)
+concat_grus_a = concatenate([gru_a_out_a, gru_b_out_a], axis=-1)
+concat_grus_b = concatenate([gru_a_out_b, gru_b_out_b], axis=-1)
+concat_convs_a = Reshape((2, MAX_TEXT_WORD_LENGTH, 400))(concat_convs_a)
+concat_convs_b = Reshape((2, MAX_TEXT_WORD_LENGTH, 400))(concat_convs_b)
 
 
 def common_network():
@@ -76,12 +76,21 @@ def common_network():
     return shared_layers
 
 common_net = common_network()
-a = common_net(concat_a)
-b = common_net(concat_b)
+common_out_a = common_net(concat_convs_a)
+common_out_b = common_net(concat_convs_b)
+common_out_a = Flatten()(common_out_a)
+common_out_b = Flatten()(common_out_b)
+attention_a = Softmax()(concat_grus_a)
+attention_b = Softmax()(concat_grus_b)
+attention_a = Flatten()(attention_a)
+attention_b = Flatten()(attention_b)
 
-concat_ab = concatenate([a, b], axis=-1)
+attended_out_a = Multiply()([common_out_a, attention_a])
+attended_out_b = Multiply()([common_out_b, attention_b])
 
-x = Flatten()(concat_ab)
+concat_ab = concatenate([attended_out_a, attended_out_b], axis=-1)
+
+x = concat_ab
 #x = BatchNormalization()(x)
 x = Dense(activation='softplus', units=500, use_bias=True)(x)
 x = Dense(activation='softplus', units=250, use_bias=True)(x)
