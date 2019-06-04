@@ -40,10 +40,11 @@ class Native_DataGenerator_for_IndependentModel(Sequence):
         data = read_dataset_data('train')
         anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), \
                            data[data.columns[2]].to_numpy()
-        mirrored_ap = np.append(anchor, pos)
-        mirrored_pa = np.append(pos, anchor)
-        mirrored_nn = np.append(neg, neg)
-        x_set = np.column_stack((mirrored_ap, mirrored_pa, mirrored_nn))
+        #mirrored_ap = np.append(np.append(anchor, pos), np.append(anchor, pos))
+        #mirrored_pa = np.append(np.append(pos, anchor), np.append(anchor, pos))
+        #mirrored_nn = np.append(np.append(neg, neg), np.append(neg, neg))
+        #x_set = np.column_stack((mirrored_ap, mirrored_pa, mirrored_nn))
+        x_set = np.column_stack((anchor, pos, neg))
         y_set = np.zeros((x_set.shape[0]), dtype=float)
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
