@@ -40,9 +40,9 @@ conv2k = Conv1D(filters=400, kernel_size=2, kernel_initializer='glorot_uniform',
 conv3k = Conv1D(filters=400, kernel_size=3, kernel_initializer='glorot_uniform',
                   input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='softplus', padding='same')
 conv2k_out_a = conv2k(input_a)
-conv3k_out_a = conv2k(input_a)
+conv3k_out_a = conv3k(input_a)
 conv2k_out_b = conv2k(input_b)
-conv3k_out_b = conv2k(input_b)
+conv3k_out_b = conv3k(input_b)
 concat_convs_a = concatenate([conv2k_out_a, conv3k_out_a], axis=1)
 concat_convs_b = concatenate([conv2k_out_b, conv3k_out_b], axis=1)
 gru_a = Bidirectional(CuDNNGRU(units=100, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
@@ -58,11 +58,11 @@ concat_convs_b = Reshape((2, MAX_TEXT_WORD_LENGTH, 400))(concat_convs_b)
 
 
 def common_network():
-    layers = [Conv2D(filters=400, kernel_size=(2, 2), kernel_initializer='glorot_uniform',
+    layers = [Conv2D(filters=100, kernel_size=(2, 2), kernel_initializer='glorot_uniform',
                      input_shape=(2, MAX_TEXT_WORD_LENGTH, 400), data_format='channels_first',
                      use_bias=True,activation='softplus', padding='same'),
               MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid',data_format='channels_first'),
-              Conv2D(filters=400, kernel_size=(2, 2), kernel_initializer='glorot_uniform',
+              Conv2D(filters=100, kernel_size=(2, 2), kernel_initializer='glorot_uniform',
                      data_format='channels_first', use_bias=True,
                      activation='softplus', padding='same'),
               MaxPooling2D(pool_size=(10, 10), strides=None, padding='valid', data_format='channels_first')
@@ -80,22 +80,22 @@ common_out_a = common_net(concat_convs_a)
 common_out_b = common_net(concat_convs_b)
 common_out_a = Flatten()(common_out_a)
 common_out_b = Flatten()(common_out_b)
-attention_a = Softmax()(concat_grus_a)
-attention_b = Softmax()(concat_grus_b)
+attention_a = concat_grus_a#Softmax()(concat_grus_a)
+attention_b = concat_grus_b#Softmax()(concat_grus_b)
 attention_a = Flatten()(attention_a)
 attention_b = Flatten()(attention_b)
 
-attended_out_a = Multiply()([common_out_a, attention_a])
-attended_out_b = Multiply()([common_out_b, attention_b])
+attended_out_a = concatenate([common_out_a, attention_a])#Multiply()([common_out_a, attention_a])
+attended_out_b = concatenate([common_out_b, attention_b])#Multiply()([common_out_b, attention_b])
 
 concat_ab = concatenate([attended_out_a, attended_out_b], axis=-1)
 
 x = concat_ab
-#x = BatchNormalization()(x)
-x = Dense(activation='softplus', units=500, use_bias=True)(x)
-x = Dense(activation='softplus', units=250, use_bias=True)(x)
-x = Dense(activation='softplus', units=100, use_bias=True)(x)
-x = Dense(activation='softplus', units=10, use_bias=True)(x)
+x = BatchNormalization()(x)
+x = Dense(activation='sigmoid', units=1000, use_bias=True)(x)
+x = Dense(activation='sigmoid', units=500, use_bias=True)(x)
+x = Dense(activation='sigmoid', units=100, use_bias=True)(x)
+x = Dense(activation='sigmoid', units=10, use_bias=True)(x)
 #x = Dense(activation='softplus', units=10, use_bias=True)(x)
 out = Dense(activation='sigmoid', units=1, use_bias=True)(x)
 
