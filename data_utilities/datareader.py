@@ -20,4 +20,4 @@ def read_dataset_data(mode = 'train'):
     elif mode == 'test':
         return pandas.read_csv(dataset_file + 'dataset_test.csv', header=0, sep=';', encoding='utf-8')
     elif mode == 'split':
-        return pandas.read_csv(dataset_file + 'dataset.csv', header=0, sep=';', encoding='utf-8')
+        return pandas.read_csv(dataset_file + 'dataset_mixed.csv', header=0, sep=';', encoding='utf-8')
