@@ -35,6 +35,7 @@ def hinge_loss(y_true, y_pred, alpha=1.0, N=3.0, beta=3.0, epsilon=1e-8):
 
 input_a = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
 input_b = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
+'''
 conv2k = Conv1D(filters=400, kernel_size=2, kernel_initializer='glorot_uniform',
                   input_shape=(None, EMBEDDING_LENGTH), use_bias=True, activation='softplus', padding='same')
 conv3k = Conv1D(filters=400, kernel_size=3, kernel_initializer='glorot_uniform',
@@ -45,6 +46,7 @@ conv2k_out_b = conv2k(input_b)
 conv3k_out_b = conv3k(input_b)
 concat_convs_a = concatenate([conv2k_out_a, conv3k_out_a], axis=1)
 concat_convs_b = concatenate([conv2k_out_b, conv3k_out_b], axis=1)
+'''
 gru_a = Bidirectional(CuDNNGRU(units=100, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
 gru_b = Bidirectional(CuDNNGRU(units=100, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
 gru_a_out_a = gru_a(input_a)
@@ -53,6 +55,7 @@ gru_b_out_a = gru_b(input_a)
 gru_b_out_b = gru_b(input_b)
 concat_grus_a = concatenate([gru_a_out_a, gru_b_out_a], axis=-1)
 concat_grus_b = concatenate([gru_a_out_b, gru_b_out_b], axis=-1)
+'''
 concat_convs_a = Reshape((2, MAX_TEXT_WORD_LENGTH, 400))(concat_convs_a)
 concat_convs_b = Reshape((2, MAX_TEXT_WORD_LENGTH, 400))(concat_convs_b)
 
@@ -89,15 +92,17 @@ attended_out_a = concatenate([common_out_a, attention_a])#Multiply()([common_out
 attended_out_b = concatenate([common_out_b, attention_b])#Multiply()([common_out_b, attention_b])
 
 concat_ab = concatenate([attended_out_a, attended_out_b], axis=-1)
+'''
+concat_ab = concatenate([concat_grus_a, concat_grus_b], axis=-1)
 
 x = concat_ab
-x = BatchNormalization()(x)
-x = Dense(activation='sigmoid', units=1000, use_bias=True)(x)
-x = Dense(activation='sigmoid', units=500, use_bias=True)(x)
-x = Dense(activation='sigmoid', units=100, use_bias=True)(x)
-x = Dense(activation='sigmoid', units=10, use_bias=True)(x)
+#x = BatchNormalization()(x)
+x = Dense(activation='relu', units=1000, use_bias=True)(x)
+x = Dense(activation='relu', units=500, use_bias=True)(x)
+x = Dense(activation='relu', units=100, use_bias=True)(x)
+x = Dense(activation='relu', units=10, use_bias=True)(x)
 #x = Dense(activation='softplus', units=10, use_bias=True)(x)
-out = Dense(activation='sigmoid', units=1, use_bias=True)(x)
+out = Dense(activation='relu', units=1, use_bias=True)(x)
 
 net = Model([input_a, input_b], out)
 net.summary()
@@ -145,7 +150,7 @@ epoch_end_callback = keras.callbacks.LambdaCallback(on_epoch_end=epoch_test)
 if TRAIN:
     # model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
     data_generator = Native_DataGenerator_for_IndependentModel(batch_size=BATCH_SIZE)
-    model.fit_generator(generator=data_generator, shuffle=True, epochs=100, workers=16, use_multiprocessing=True, callbacks=[epoch_end_callback])
+    model.fit_generator(generator=data_generator, shuffle=True, epochs=100, workers=1, use_multiprocessing=False, callbacks=[epoch_end_callback])
     model.save('trained_models/model_independent_06_BiGRU_Fasttext_hardmargin_differentarchitectures.h5')
 else:
     model = load_model('trained_models/model_independent_02_BiGRU_FastText_hardmargin.h5', custom_objects={'hinge_loss': hinge_loss})
