@@ -1,5 +1,5 @@
 from keras.layers import Conv1D, Conv2D, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, \
-    Lambda, CuDNNGRU, Bidirectional, BatchNormalization, CuDNNLSTM
+    Lambda, Bidirectional, BatchNormalization, LSTM
 from keras.models import Sequential, Model, load_model
 import keras.callbacks
 from keras.optimizers import Adam, Adadelta
@@ -15,7 +15,7 @@ import numpy as np
 TRAIN = True
 
 
-def hinge_loss(y_true, y_pred, N=1000, beta=1000.0, epsilon=1e-5):
+def hinge_loss(y_true, y_pred, N=1000, beta=1000.0, epsilon=K.epsilon()):
     anchor = Lambda(lambda x: x[:, 0:N])(y_pred)
     positive = Lambda(lambda x: x[:, N:N * 2])(y_pred)
     negative = Lambda(lambda x: x[:, N * 2:N * 3])(y_pred)
@@ -35,16 +35,16 @@ def hinge_loss(y_true, y_pred, N=1000, beta=1000.0, epsilon=1e-5):
 input_a = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
 
 conv2k = Conv1D(filters=400, kernel_size=2, kernel_initializer='glorot_uniform',
-                  input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), use_bias=False, activation=None, padding='same')
+                  input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), use_bias=True, activation='softplus', padding='same')
 conv3k = Conv1D(filters=400, kernel_size=3, kernel_initializer='glorot_uniform',
-                  input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), use_bias=True, activation=None, padding='same')
+                  input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), use_bias=True, activation='softplus', padding='same')
 conv2k_out = conv2k(input_a)
 conv3k_out = conv3k(input_a)
 concat_convs_a = concatenate([conv2k_out, conv3k_out], axis=1)
 
-lstm_concat = Bidirectional(CuDNNLSTM(units=200, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
-lstm_a = Bidirectional(CuDNNLSTM(units=400, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
-lstm_last = Bidirectional(CuDNNLSTM(units=25, return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
+lstm_concat = Bidirectional(LSTM(units=200, activation='tanh', return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
+lstm_a = Bidirectional(LSTM(units=400, activation='tanh', return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
+lstm_last = Bidirectional(LSTM(units=25, activation='tanh',return_sequences=True, input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat')
 lstm_concat_out = lstm_concat(concat_convs_a)
 lstm_a_out = lstm_a(input_a)
 
@@ -149,7 +149,7 @@ def epoch_test(epoch, logs):
 
 epoch_end_callback = keras.callbacks.LambdaCallback(on_epoch_end=epoch_test)
 reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='loss', patience=3, factor=0.1, verbose=1, min_lr=0.000001)
-checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath='trained_models/model_independent_2_01_Fasttext_mixedmargin.h5', period=1)
+checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
 
 if TRAIN:
     # model = load_model('trained_models/model_arc2_02_concat.h5', custom_objects={'hinge_loss': hinge_loss})
