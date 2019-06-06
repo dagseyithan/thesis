@@ -16,7 +16,7 @@ def read_original_products_data():
 
 def read_dataset_data(mode = 'train'):
     if mode == 'train':
-        return pandas.read_csv(dataset_file + 'dataset_hard_train.csv', header=0, sep=';', encoding='utf-8')
+        return pandas.read_csv(dataset_file + 'dataset_mixed_train.csv', header=0, sep=';', encoding='utf-8')
     elif mode == 'test':
         return pandas.read_csv(dataset_file + 'dataset_test.csv', header=0, sep=';', encoding='utf-8')
     elif mode == 'split':
