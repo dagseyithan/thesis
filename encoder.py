@@ -36,23 +36,17 @@ letter['ü'] = 28
 letter['ß'] = 29
 
 
-word_matrix = np.zeros((30, 30))
-
-word = 'schule'
 
 
-for position, char in enumerate(word):
-    word_matrix[letter[char], position] = 1
 
-m = np.ones((2, 2))
-print(softmax(m))
+def encode_number(number):
+    number_matrix = np.zeros((10, 10))
 
-print(distance.euclidean([1, 0, 1], [0, 1, 0]))
+    for i in range(9, 0, -1):
+        d = number % 10
+        number = int(np.floor(number / 10))
+        number_matrix[d][i] = 1
 
-print(distance.euclidean([0, 0, 0], [0, 0, 1]))
+    return number_matrix
 
-print(distance.euclidean([0, 1, 0], [1, 0, 0]))
 
-print('\n\n')
-sim = (distance.euclidean([1, 0, 1], [0, 1, 0]) + distance.euclidean([0, 0, 0], [0, 0, 1]) + distance.euclidean([0, 1, 0], [1, 0, 0]))/3.0
-print(np.log(sim))

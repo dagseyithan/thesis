@@ -3,6 +3,8 @@ import numpy as np
 from data_utilities.datareader import read_dataset_data, read_original_products_data
 from texttovector import get_ready_vector, get_ready_vector_on_batch
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
+from encoder import encode_number
+from sklearn.preprocessing import minmax_scale
 
 COMBINATION_COUNT = 1944
 
@@ -33,6 +35,29 @@ def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, windo
 
 def get_concat(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):
     return np.concatenate((vec_A, vec_B))
+
+
+class Native_DataGenerator_for_StructuralSimilarityModel(Sequence):
+    def __init__(self, batch_size):
+        x_a = np.random.randint(0, 10001, (10000, 1))
+        x_b = np.random.randint(0, 10001, (10000, 1))
+        x_set = np.column_stack((x_a, x_b))
+        y_set = minmax_scale(np.abs(x_a - x_b), feature_range=(0, 10))
+        print(y_set)
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        x_a = np.array([np.expand_dims(encode_number(number[0]), axis=0) for number in batch_x])
+        x_b = np.array([np.expand_dims(encode_number(number[1]), axis=0) for number in batch_x])
+
+        return [x_a, x_b], batch_y
 
 
 class Native_DataGenerator_for_IndependentModel(Sequence):
