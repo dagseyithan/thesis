@@ -1,13 +1,7 @@
-from keras.layers import Conv1D, Conv2D, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, \
-    Lambda, CuDNNGRU, Bidirectional, BatchNormalization, CuDNNLSTM
-from keras.models import Sequential, Model, load_model
-import keras.callbacks
-from keras.optimizers import Adam, Adadelta
-import keras.backend as K
+from keras.layers import Lambda
+from keras.models import load_model
 import tensorflow as tf
-from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH, BATCH_SIZE
-from data_utilities.generator import Native_DataGenerator_for_IndependentModel
-from keras.utils import plot_model
+from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 from texttovector import get_ready_vector
 from scipy.spatial.distance import cosine
 import numpy as np

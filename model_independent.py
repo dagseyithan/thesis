@@ -1,13 +1,11 @@
-from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, \
-    Lambda, CuDNNGRU, AveragePooling3D, Bidirectional, Softmax, Multiply
-from keras.models import Sequential, Model, load_model
+from keras.layers import Dense, Input, concatenate, \
+    Lambda, CuDNNGRU, Bidirectional
+from keras.models import Model, load_model
 import keras.callbacks
-from keras.optimizers import Adam, Adadelta
+from keras.optimizers import Adam
 import keras.backend as K
-import tensorflow as tf
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH, BATCH_SIZE
 from data_utilities.generator import Native_DataGenerator_for_IndependentModel
-from keras.utils import plot_model
 from texttovector import get_ready_vector
 import numpy as np
 

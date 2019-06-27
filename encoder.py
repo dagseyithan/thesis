@@ -1,7 +1,6 @@
 import numpy as np
-import pprint as pp
-from scipy.special import softmax
-from scipy.spatial import distance
+
+LENGTH = 30
 
 letter = {}
 letter['a'] = 0
@@ -36,23 +35,26 @@ letter['ü'] = 28
 letter['ß'] = 29
 
 
-word_matrix = np.zeros((30, 30))
+letter_decode = {}
+for char, code in letter.items():
+    letter_decode[code] = char
 
-word = 'schule'
+def encode_word(word):
+    word_r = word[::-1]
+    word_matrix = np.zeros((LENGTH, LENGTH))
+    word_r_matrix = np.zeros((LENGTH, LENGTH))
+
+    for position, (char, char_r) in enumerate(zip(word, word_r)):
+        word_matrix[letter[char], position] = 1
+        word_r_matrix[letter[char_r], position] = 1
+    return word_matrix, word_r_matrix
 
 
-for position, char in enumerate(word):
-    word_matrix[letter[char], position] = 1
+def decode_matrix(m):
+    word = []
+    for j in range(0, LENGTH):
+        for i in range(0, LENGTH):
+            if m[i, j] == 1.0:
+                word.append(letter_decode[i])
+    return ''.join(word)
 
-m = np.ones((2, 2))
-print(softmax(m))
-
-print(distance.euclidean([1, 0, 1], [0, 1, 0]))
-
-print(distance.euclidean([0, 0, 0], [0, 0, 1]))
-
-print(distance.euclidean([0, 1, 0], [1, 0, 0]))
-
-print('\n\n')
-sim = (distance.euclidean([1, 0, 1], [0, 1, 0]) + distance.euclidean([0, 0, 0], [0, 0, 1]) + distance.euclidean([0, 1, 0], [1, 0, 0]))/3.0
-print(np.log(sim))

@@ -2,10 +2,9 @@ from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense
 from keras.models import Sequential
 import numpy as np
 import pprint as pp
-import text_utilities as tu
 from keras import backend as K
-from elmo import __get_elmo_sentence_embedding, __get_elmo_word_embedding
-from config.configurations import MAX_TEXT_WORD_LENGTH, ELMO_VECTOR_LENGTH, FASTTEXT_VECTOR_LENGTH
+from elmo import __get_elmo_sentence_embedding
+from config.configurations import MAX_TEXT_WORD_LENGTH, ELMO_VECTOR_LENGTH
 
 
 def get_combinations(vec_A, vec_B, max_text_length, word_embedding_length, window_size = 3):

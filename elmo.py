@@ -14,6 +14,8 @@ if configurations.EMBEDDER == 'ELMO':
             embedder = Embedder(configurations.WINDOWS_ELMO_GERMAN_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
         elif configurations.LANGUAGE == 'ENGLISH':
             embedder = Embedder(configurations.WINDOWS_ELMO_ENGLISH_EMBEDDINGS_MODEL_PATH, batch_size=configurations.BATCH_SIZE)
+else:
+    print('ERROR: ELMO is not set as the embedder!')
 
 
     print('ELMo ' + configurations.LANGUAGE + ' model has been loaded...')

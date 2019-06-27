@@ -1,18 +1,17 @@
 from keras.layers import Conv1D, Conv2D, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, \
     Lambda, Bidirectional, BatchNormalization, LSTM
-from keras.models import Sequential, Model, load_model
+from keras.models import Model, load_model
 import keras.callbacks
-from keras.optimizers import Adam, Adadelta
+from keras.optimizers import Adam
 import keras.backend as K
 import tensorflow as tf
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH, BATCH_SIZE
 from data_utilities.generator import Native_DataGenerator_for_IndependentModel
-from keras.utils import plot_model
 from texttovector import get_ready_vector
 from scipy.spatial.distance import cosine
 import numpy as np
 
-TRAIN = True
+TRAIN = False
 
 
 def hinge_loss(y_true, y_pred, N=1000, beta=1000.0, epsilon=K.epsilon()):
@@ -107,7 +106,7 @@ def get_similarity_from_independent_model_2(textA, textB):
     vec_B = model.predict_on_batch([np.reshape(get_ready_vector(textB), (1,MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)),
                                    np.reshape(get_ready_vector(textB), (1,MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)),
                                    np.reshape(get_ready_vector(textB), (1,MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))])
-    return cosine(vec_A, vec_B)
+    return 1.0 - cosine(vec_A, vec_B)
 
 
 def epoch_test(epoch, logs):
@@ -158,7 +157,7 @@ if TRAIN:
                         callbacks=[epoch_end_callback, reduce_lr, checkpoint_callback])
     model.save('trained_models/model_independent_2_01_Fasttext_mixedmargin.h5')
 else:
-    model = load_model('trained_models/model_independent_02_BiGRU_FastText_mixedmargin.h5', custom_objects={'hinge_loss': hinge_loss})
+    model = load_model('trained_models\model_independent_2_02_RegularRNN_Fasttext_mixedmargin.h5', custom_objects={'hinge_loss': hinge_loss})
     model.summary()
 
 

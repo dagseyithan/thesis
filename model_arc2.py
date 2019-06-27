@@ -1,10 +1,9 @@
-from keras.layers import Conv1D, Conv2D, BatchNormalization, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, Lambda
+from keras.layers import Conv1D, Conv2D, MaxPooling2D, Dense, Reshape, Flatten, Input, concatenate, Lambda
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
 import keras.backend as K
-import tensorflow as tf
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH, BATCH_SIZE
-from data_utilities.generator import Native_DataGenerator_for_Arc2, Native_DataGenerator_for_Arc2_on_batch, get_combinations, get_concat
+from data_utilities.generator import Native_DataGenerator_for_Arc2, get_combinations
 from texttovector import get_ready_vector
 import numpy as np
 

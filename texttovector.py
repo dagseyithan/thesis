@@ -2,9 +2,7 @@ import numpy as np
 import text_utilities as tu
 from elmo import __get_elmo_sentence_embedding, __get_elmo_sentence_embedding_on_batch
 from fasttext import __get_fasttext_sentence_embedding
-from config.configurations import ELMO_VECTOR_LENGTH, MAX_TEXT_WORD_LENGTH, FASTTEXT_VECTOR_LENGTH, EMBEDDER, BATCH_SIZE, EMBEDDING_LENGTH
-import pprint as pp
-
+from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDER, BATCH_SIZE, EMBEDDING_LENGTH
 
 
 def get_ready_vector(text, padding = True, embedder = EMBEDDER):
