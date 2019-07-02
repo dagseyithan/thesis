@@ -21,3 +21,9 @@ def read_dataset_data(mode = 'train'):
         return pandas.read_csv(dataset_file + 'dataset_test.csv', header=0, sep=';', encoding='utf-8')
     elif mode == 'split':
         return pandas.read_csv(dataset_file + 'dataset_mixed.csv', header=0, sep=';', encoding='utf-8')
+
+def read_german_words_dictionary():
+    with open('C:\\Users\\seyit\\PycharmProjects\\thesis\\data\\german_words_dictionary\\german.txt','r', encoding='latin1') as file:
+        dic = [str(word).lower().strip() for word in file]
+    file.close()
+    return dic

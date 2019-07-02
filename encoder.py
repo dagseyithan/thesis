@@ -39,16 +39,33 @@ letter_decode = {}
 for char, code in letter.items():
     letter_decode[code] = char
 
-def encode_word(word):
+def encode_word(word, return_reverse = False):
+    word = word[:30]
     word_r = word[::-1]
     word_matrix = np.zeros((LENGTH, LENGTH))
     word_r_matrix = np.zeros((LENGTH, LENGTH))
 
     for position, (char, char_r) in enumerate(zip(word, word_r)):
-        word_matrix[letter[char], position] = 1
-        word_r_matrix[letter[char_r], position] = 1
-    return word_matrix, word_r_matrix
+        try:
+            word_matrix[letter[char], position] = 1
+            word_r_matrix[letter[char_r], position] = 1
+        except KeyError:
+            word_matrix[letter['a'], position] = 1
+            word_r_matrix[letter['a'], position] = 1
+    if return_reverse:
+        return word_matrix, word_r_matrix
+    else:
+        return word_matrix
 
+def encode_number(number):
+    number_matrix = np.zeros((10, 10))
+
+    for i in range(9, 0, -1):
+        d = number % 10
+        number = int(np.floor(number / 10))
+        number_matrix[d][i] = 1
+
+    return number_matrix
 
 def decode_matrix(m):
     word = []

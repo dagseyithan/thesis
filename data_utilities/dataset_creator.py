@@ -66,5 +66,6 @@ def create_mixed_margin_dataset(run = False):
         file.close()
     return None
 
-split_dataset(True)
+
+#create_structuralsimilarity_dataset(True)
 
