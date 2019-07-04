@@ -1,6 +1,6 @@
 import numpy as np
 
-LENGTH = 30
+MAX_WORD_CHARACTER_LENGTH = 54
 
 letter = {}
 letter['a'] = 0
@@ -33,6 +33,31 @@ letter['ä'] = 26
 letter['ö'] = 27
 letter['ü'] = 28
 letter['ß'] = 29
+letter['é'] = 30
+letter['&'] = 31
+letter['‘'] = 32
+letter['-'] = 33
+letter[','] = 34
+letter['@'] = 35
+letter['$'] = 36
+letter['!'] = 37
+letter['?'] = 38
+letter['.'] = 39
+letter['_'] = 40
+letter['*'] = 41
+letter[';'] = 42
+letter['#'] = 43
+letter['0'] = 44
+letter['1'] = 45
+letter['2'] = 46
+letter['3'] = 47
+letter['4'] = 48
+letter['5'] = 49
+letter['6'] = 50
+letter['7'] = 51
+letter['8'] = 52
+letter['9'] = 53
+
 
 
 letter_decode = {}
@@ -40,10 +65,10 @@ for char, code in letter.items():
     letter_decode[code] = char
 
 def encode_word(word, return_reverse = False):
-    word = word[:30]
+    word = word[:MAX_WORD_CHARACTER_LENGTH]
     word_r = word[::-1]
-    word_matrix = np.zeros((LENGTH, LENGTH))
-    word_r_matrix = np.zeros((LENGTH, LENGTH))
+    word_matrix = np.zeros((MAX_WORD_CHARACTER_LENGTH, MAX_WORD_CHARACTER_LENGTH))
+    word_r_matrix = np.zeros((MAX_WORD_CHARACTER_LENGTH, MAX_WORD_CHARACTER_LENGTH))
 
     for position, (char, char_r) in enumerate(zip(word, word_r)):
         try:
@@ -69,8 +94,8 @@ def encode_number(number):
 
 def decode_matrix(m):
     word = []
-    for j in range(0, LENGTH):
-        for i in range(0, LENGTH):
+    for j in range(0, MAX_WORD_CHARACTER_LENGTH):
+        for i in range(0, MAX_WORD_CHARACTER_LENGTH):
             if m[i, j] == 1.0:
                 word.append(letter_decode[i])
     return ''.join(word)

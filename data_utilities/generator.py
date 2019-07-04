@@ -61,7 +61,16 @@ class Native_DataGenerator_for_StructuralSimilarityModel(Sequence):
 
 class Native_DataGenerator_for_StructuralSimilarityModel_Autoencoder(Sequence):
     def __init__(self, batch_size):
-        x_set = read_german_words_dictionary()
+        x_set = []
+        for i in range(20):
+            for num in range(0, 512):
+                pad = np.zeros((9), dtype=float)
+                arr = np.array([float(x) for x in bin(num)[2:]])
+                pad[-len(arr):] = arr
+                x_set.append(pad)
+
+        x_set = np.array(x_set)#np.random.randint(2, size = (10000, 9)).astype(np.float)#read_german_words_dictionary()
+        np.random.shuffle(x_set)
         y_set = x_set
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
@@ -73,10 +82,7 @@ class Native_DataGenerator_for_StructuralSimilarityModel_Autoencoder(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        x = np.array([np.ndarray.flatten(encode_word(word)) for word in batch_x])
-        y = x
-
-        return x, y
+        return batch_x, batch_y
 
 
 class Native_DataGenerator_for_IndependentModel(Sequence):
