@@ -1,63 +1,12 @@
 import numpy as np
 
-MAX_WORD_CHARACTER_LENGTH = 60
-ALPHABET_LENGTH = 54
+MAX_WORD_CHARACTER_LENGTH = 3
 
 letter = {}
 letter['a'] = 0
 letter['b'] = 1
 letter['c'] = 2
-letter['d'] = 3
-letter['e'] = 4
-letter['f'] = 5
-letter['g'] = 6
-letter['h'] = 7
-letter['i'] = 8
-letter['j'] = 9
-letter['k'] = 10
-letter['l'] = 11
-letter['m'] = 12
-letter['n'] = 13
-letter['o'] = 14
-letter['p'] = 15
-letter['q'] = 16
-letter['r'] = 17
-letter['s'] = 18
-letter['t'] = 19
-letter['u'] = 20
-letter['v'] = 21
-letter['w'] = 22
-letter['x'] = 23
-letter['y'] = 24
-letter['z'] = 25
-letter['ä'] = 26
-letter['ö'] = 27
-letter['ü'] = 28
-letter['ß'] = 29
-letter['é'] = 30
-letter['&'] = 31
-letter['‘'] = 32
-letter['-'] = 33
-letter[','] = 34
-letter['@'] = 35
-letter['$'] = 36
-letter['!'] = 37
-letter['?'] = 38
-letter['.'] = 39
-letter['_'] = 40
-letter['*'] = 41
-letter[';'] = 42
-letter['#'] = 43
-letter['0'] = 44
-letter['1'] = 45
-letter['2'] = 46
-letter['3'] = 47
-letter['4'] = 48
-letter['5'] = 49
-letter['6'] = 50
-letter['7'] = 51
-letter['8'] = 52
-letter['9'] = 53
+
 
 
 
@@ -95,7 +44,7 @@ def encode_number(number):
 
 def decode_matrix(m):
     word = []
-    for j in range(0, ALPHABET_LENGTH):
+    for j in range(0, MAX_WORD_CHARACTER_LENGTH):
         for i in range(0, MAX_WORD_CHARACTER_LENGTH):
             if m[i, j] == 1.0:
                 word.append(letter_decode[i])

@@ -1,41 +1,54 @@
-import math
-import numpy as np
-import difflib
-from scipy import spatial
-from scipy.linalg import norm
-from scipy.optimize import linear_sum_assignment
-from scipy.spatial.distance import sokalmichener, hamming
-from nltk.metrics.distance import edit_distance, masi_distance, jaccard_distance
-from ngram import NGram
 import encoder
-from pyjarowinkler.distance import get_jaro_distance
+from scipy.spatial.distance import hamming
+import numpy as np
+import pprint as pp
 
-MAX_WORD_LENGTH = 30.0
+
+def get_convolutional_similarity(worda, wordb, n = 2, stride = 2):
+    count = 0.0
+    total = 0.0
+    word_matrix_a = encoder.encode_word(worda, return_reverse=False)
+    word_matrix_b = encoder.encode_word(wordb, return_reverse=False)
+
+    #pp.pprint(word_matrix_a)
+    #pp.pprint(word_matrix_b)
+
+    for i in range(0, encoder.MAX_WORD_CHARACTER_LENGTH, stride):
+        for j in range(0, encoder.ALPHABET_LENGTH, stride):
+            if i+n >= encoder.MAX_WORD_CHARACTER_LENGTH or j+n >= encoder.ALPHABET_LENGTH:
+                break
+            sub_matrix_a = word_matrix_a[i:i+n, j:j+n]
+            sub_matrix_b = word_matrix_b[i:i+n, j:j+n]
+
+            score = get_encoded_similarity(sub_matrix_a, sub_matrix_b, n)
+            #print(score)
+            if sub_matrix_a.any() or sub_matrix_b.any():
+                count = count + 1.0
+                total+= score
+    #print(total)
+    #print(count)
+    return total/count
+
+def get_encoded_similarity(a, b, n = 3):
+    a_r = np.flip(a, axis=1)
+    b_r = np.flip(b, axis=1)
+
+    if a.any():
+        while not a_r[:,0:1].any():
+            a_r = np.roll(a_r, -1, axis=1)
+    if b.any():
+        while not b_r[:,0:1].any():
+            b_r = np.roll(b_r, -1, axis=1)
 
 
-def get_encoded_simple_similarity(worda, wordb):
-    a, a_r = encoder.encode_word(worda)
-    b, b_r = encoder.encode_word(wordb)
-    op_hadamard = np.multiply(a, b).sum()
-    op_r_hadamard = np.multiply(a_r, b_r).sum()
-    op = (a.sum() + b.sum())
-    return ((op_hadamard+op_r_hadamard) + np.abs(op_hadamard - op_r_hadamard))/op
-
-def get_encoded_norm_similarity(worda, wordb):
-    a, a_r = encoder.encode_word(worda)
-    b, b_r = encoder.encode_word(wordb)
-    return 1.0 - ((norm(np.subtract(a, b)) + norm(np.subtract(a_r, b_r))) / np.add(a, b).sum())
-
-def get_encoded_similarity(worda, wordb):
-    #print(str(hamming([1,0,0,0,0], [0,0,0,0,0])))
-    #print(str(euclidean([1,0,0,0,0], [0,0,0,1,1])))
-    a, a_r = encoder.encode_word(worda)
-    b, b_r = encoder.encode_word(wordb)
+    print(a)
+    print(a_r)
+    print(b)
+    print(b_r)
 
     len_a = a.sum()
     len_b = b.sum()
     max_len = len_a if len_a > len_b else len_b
-    #print(max_len)
     dist, dist_t, dist_r, dist_t_r = 0.0, 0.0, 0.0, 0.0
     i = 0
     for coli_at, coli_bt, coli_at_r, coli_bt_r in zip(a.transpose(), b.transpose(), a_r.transpose(), b_r.transpose()):
@@ -47,64 +60,59 @@ def get_encoded_similarity(worda, wordb):
     i = 0
     for rowi_a, rowi_b in zip(a, b):
         if rowi_a.any() and rowi_b.any():
-            dist +=  (1.0 - hamming(rowi_a, rowi_b))
+            dist += (hamming(rowi_a, rowi_b))
             i+=1
         elif (rowi_a.any() and not rowi_b.any()) or (not rowi_a.any() and rowi_b.any()):
             i+=1
+    for rowi_a, rowi_b in zip(a_r, b_r):
+        if rowi_a.any() and rowi_b.any():
+            dist_r +=  (hamming(rowi_a, rowi_b))
+            i+=1
+        elif (rowi_a.any() and not rowi_b.any()) or (not rowi_a.any() and rowi_b.any()):
+            i+=1
+    print(max_len)
+    print('dist: ' + str(dist))
+    print('dist_r: ' + str(dist_r))
+    print('dist_t: ' + str(dist_t))
+    print('dist_t_r: ' + str(dist_t_r))
 
 
 
-    #print('dist_t: ' + str(dist_t))
-    #print('dist_t_r: ' + str(dist_t_r))
-    #print(i)
+    dist = dist /max_len
+    dist_r = dist_r/max_len
+    dist_t = dist_t /max_len
+    dist_t_r = dist_t_r/max_len
+    print('encoded_dist:')
+    print(((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
+
+    op_hadamard = np.multiply(a, b).sum()
+    op_r_hadamard = np.multiply(a_r, b_r).sum()
+    op = (a.sum() + b.sum())
+
+    #print(op_hadamard)
+    #print(op_r_hadamard)
+
+    print('encoded + encoded_dist:')
+    print()
+
+    hadamard = ((op_hadamard+op_r_hadamard)/op) if op != 0.0 else 0.0
+    encoded = (((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
+
+    total = (hadamard + encoded)*0.5
+
+    return total
 
 
-    dist = dist/i
-    dist_t = dist_t / max_len
-    dist_t_r = dist_t_r / max_len
+def get_mean_convolutional_similarity(worda, wordb):
+    print('n=2:')
+    #print(get_convolutional_similarity(worda, wordb, n=2, stride=1))
+    print(get_convolutional_similarity(worda, wordb, n=3, stride=1))
+    #print(get_convolutional_similarity(worda, wordb, n=4, stride=1))
 
-    #print('dist: ' + str(dist))
-    #print('dist_t: ' + str(dist_t))
-    #print('dist_t_r: ' + str(dist_t_r))
-
-
-    return (((dist_t + dist_t_r) * 1./2.0) + dist)*1./2.0
-
-def get_ngram_similarity(worda, wordb, n = 2):
-    return NGram.compare(worda, wordb, k = n)
-
-def get_edit_distance(worda, wordb):
-    return edit_distance(worda, wordb)
+    return get_convolutional_similarity(worda, wordb, n=3, stride=1)
 
 
-def get_alignment_cost_matrix(worda, wordb):
-    count = 0
-    collection = []
-    cost = []
-    for ci in worda:
-        for cj in wordb:
-            collection.append(1.0 if ci is cj else 0.0)
-            count = count + 1
-        cost.append(collection)
-        collection = []
-    return count, np.nan_to_num(np.array(cost))
+print(get_mean_convolutional_similarity('mableitung', 'ableitung'))
+print(get_mean_convolutional_similarity('gnuy mableitung', 'ableitung'))
 
-
-def get_hungarian_alignment_distance(texta, textb):
-    count, Matrix = get_alignment_cost_matrix(texta, textb)
-    row_ind, col_ind = linear_sum_assignment(Matrix)
-    return Matrix[row_ind, col_ind].sum() / count
-
-
-def get_hybrid_similarity(worda, wordb):
-    #print('hamming: ' + str(hamming(worda, wordb)))
-    #print('edit: ' + str(1 - get_edit_distance(worda, wordb)/MAX_WORD_LENGTH))
-    #print('encoded: ' + str(get_encoded_similarity(worda, wordb)))
-    #print('norm: ' + str(get_encoded_norm_similarity(worda, wordb)))
-    #print('jaro: ' + str(get_jaro_distance(worda, wordb)))
-    #print('jac:'+str(jaccard_distance(set(worda), set(wordb))))
-    return 0.20 * get_jaro_distance(worda, wordb) \
-         + 0.20 * get_encoded_norm_similarity(worda, wordb) \
-         + 0.20 * get_encoded_similarity(worda, wordb) \
-         + 0.20 * (1-jaccard_distance(set(worda), set(wordb))) \
-         + 0.20 * get_ngram_similarity(worda, wordb, n=2)
+#get_convolutional_similarity('aba', 'aba', n=2, stride=2)

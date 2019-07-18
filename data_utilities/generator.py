@@ -63,8 +63,8 @@ class Native_DataGenerator_for_StructuralSimilarityModel_Autoencoder(Sequence):
     def __init__(self, batch_size):
         x_set = []
         for i in range(20):
-            for num in range(0, 512):
-                pad = np.zeros((9), dtype=float)
+            for num in range(0, 16):
+                pad = np.zeros((4), dtype=float)
                 arr = np.array([float(x) for x in bin(num)[2:]])
                 pad[-len(arr):] = arr
                 x_set.append(pad)
