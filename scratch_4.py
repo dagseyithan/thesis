@@ -35,14 +35,7 @@ print(edit_distance('1110110101', '11100000'))
 print(hamming('1110110101', '11100000'))
 '''
 
-def generate_strings():
-    st_set=[[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]]
-    for i in range(0, 4):
-        for j in range(0, 4):
-            for k in range(0, 4):
-                arr=np.column_stack((st_set[i], st_set[j], st_set[k]))
-                arr_r = np.flip(arr, axis=1)
-                yield arr, arr_r
+
 
 for a, a_r in generate_strings():
     for b, b_r in generate_strings():
@@ -60,3 +53,14 @@ for a, a_r in generate_strings():
         print(no)
         print((dist+no)/2.0)
 '''
+
+def generate_strings():
+    st_set=[[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]]
+    for i in range(0, 4):
+        for j in range(0, 4):
+            for k in range(0, 4):
+                arr=np.column_stack((st_set[i], st_set[j], st_set[k]))
+                arr_r = np.flip(arr, axis=1)
+                print(arr)
+
+generate_strings()

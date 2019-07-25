@@ -5,6 +5,8 @@ from texttovector import get_ready_vector, get_ready_vector_on_batch
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 from encoder import encode_word, encode_number
 from sklearn.preprocessing import minmax_scale
+from structural import get_encoded_similarity
+from keras.models import load_model
 
 COMBINATION_COUNT = 1944
 
@@ -58,6 +60,80 @@ class Native_DataGenerator_for_StructuralSimilarityModel(Sequence):
         x_b = np.array([np.expand_dims(encode_number(number[1]), axis=0) for number in batch_x])
 
         return [x_a, x_b], batch_y
+
+class Native_DataGenerator_for_StructuralSimilarityModel_LSTMEncoder3x3(Sequence):
+    def __init__(self, batch_size):
+        x_set = []
+        for i in range(1):
+            for num in range(0, 262144):
+                pad = np.zeros((18), dtype=float)
+                arr = np.array([float(x) for x in bin(num)[2:]])
+                pad[-len(arr):] = arr
+                x_set.append(pad)
+
+        x_set = np.array(x_set)
+        print(x_set)
+        x_set= np.reshape(x_set, (x_set.shape[0], x_set.shape[1], 1))
+        np.random.shuffle(x_set)
+        y_set = np.array([get_encoded_similarity(np.reshape(entry[0:9], (3, 3)), np.reshape(entry[9:18], (3,3))) for entry in x_set])
+        print(y_set)
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        return batch_x, batch_y
+
+
+class Native_DataGenerator_for_StructuralSimilarityModel_SimilaritySpace3x3(Sequence):
+    def __init__(self, batch_size):
+        encoder3x3 = load_model(
+            'C:\\Users\\seyit\\PycharmProjects\\thesis\\trained_models\\model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
+        print('encoder3x3 model has been loaded...')
+        x_set = []
+        x_set_strings = []
+        for i in range(1):
+            for num in range(0, 512):
+                pad = np.zeros((9), dtype=float)
+                arr = np.array([float(x) for x in bin(num)[2:]])
+                pad[-len(arr):] = arr
+                x_set_binary = []
+                encoded_vectors = []
+                x_set_binary.append(pad)
+                encoded_vectors.append(encoder3x3.predict(np.array([pad]))[0])
+                for num2 in range(0, 512):
+                    pad = np.zeros((9), dtype=float)
+                    arr = np.array([float(x) for x in bin(num2)[2:]])
+                    pad[-len(arr):] = arr
+                    x_set_binary.append(pad)
+                    encoded_vectors.append(encoder3x3.predict(np.array([pad]))[0])
+                    x_set.append(np.array(encoded_vectors))
+                    x_set_strings.append(x_set_binary)
+                    encoded_vectors = [encoded_vectors[0]]
+                    x_set_binary = [x_set_binary[0]]
+
+        x_set = np.array(x_set)
+        x_set_strings = np.array(x_set_strings)
+        y_set = np.array([get_encoded_similarity(np.reshape(entry[0], (3, 3)), np.reshape(entry[1], (3, 3))) for entry in x_set_strings])
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        vec_a = np.array([vec[0] for vec in batch_x])
+        vec_b = np.array([vec[1] for vec in batch_x])
+
+        return [vec_a, vec_b], batch_y
 
 class Native_DataGenerator_for_StructuralSimilarityModel_Autoencoder(Sequence):
     def __init__(self, batch_size):

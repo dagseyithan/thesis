@@ -98,11 +98,12 @@ def get_hybrid_similarity(worda, wordb):
     print('norm: ' + str(get_encoded_norm_similarity(worda, wordb)))
     print('encoded: ' + str(get_encoded_similarity(worda, wordb)))
     print('edit: ' + str(1 - get_edit_distance(worda, wordb)/max_len))
-    print('hamming: ' + str(1 - hamming(worda, wordb)/max_len))
+    print('hamming: ' + str(1 - hamming(worda, wordb)))
 
-    return 0.20 * get_jaro_distance(worda, wordb, winkler=True) \
-         + 0.20 * get_encoded_norm_similarity(worda, wordb) \
-         + 0.20 * get_encoded_similarity(worda, wordb) \
-         + 0.20 * (1 - get_edit_distance(worda, wordb)/max_len) \
-         + 0.20 * (1 - hamming(worda, wordb)/max_len)
+    return 0.25 * get_jaro_distance(worda, wordb, winkler=True) \
+         + 0.25 * get_encoded_norm_similarity(worda, wordb) \
+         + 0.25 * get_encoded_similarity(worda, wordb) \
+         + 0.25 * (1 - get_edit_distance(worda, wordb)/max_len)
 
+
+print(get_hybrid_similarity('abteilung', 'mabteilung'))

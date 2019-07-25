@@ -40,11 +40,11 @@ def get_encoded_similarity(a, b, n = 3):
         while not b_r[:,0:1].any():
             b_r = np.roll(b_r, -1, axis=1)
 
-
-    print(a)
-    print(a_r)
-    print(b)
-    print(b_r)
+    '''
+    #print(a)
+    #print(a_r)
+    #print(b)
+    #print(b_r)
 
     len_a = a.sum()
     len_b = b.sum()
@@ -70,11 +70,11 @@ def get_encoded_similarity(a, b, n = 3):
             i+=1
         elif (rowi_a.any() and not rowi_b.any()) or (not rowi_a.any() and rowi_b.any()):
             i+=1
-    print(max_len)
-    print('dist: ' + str(dist))
-    print('dist_r: ' + str(dist_r))
-    print('dist_t: ' + str(dist_t))
-    print('dist_t_r: ' + str(dist_t_r))
+    #print(max_len)
+    #print('dist: ' + str(dist))
+    #print('dist_r: ' + str(dist_r))
+    #print('dist_t: ' + str(dist_t))
+    #print('dist_t_r: ' + str(dist_t_r))
 
 
 
@@ -82,8 +82,8 @@ def get_encoded_similarity(a, b, n = 3):
     dist_r = dist_r/max_len
     dist_t = dist_t /max_len
     dist_t_r = dist_t_r/max_len
-    print('encoded_dist:')
-    print(((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
+    #print('encoded_dist:')
+    #print(((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
 
     op_hadamard = np.multiply(a, b).sum()
     op_r_hadamard = np.multiply(a_r, b_r).sum()
@@ -92,8 +92,8 @@ def get_encoded_similarity(a, b, n = 3):
     #print(op_hadamard)
     #print(op_r_hadamard)
 
-    print('encoded + encoded_dist:')
-    print()
+    #print('encoded + encoded_dist:')
+    #print()
 
     hadamard = ((op_hadamard+op_r_hadamard)/op) if op != 0.0 else 0.0
     encoded = (((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
@@ -101,18 +101,23 @@ def get_encoded_similarity(a, b, n = 3):
     total = (hadamard + encoded)*0.5
 
     return total
+    '''
+    op_hadamard = np.multiply(a, b).sum()
+    op_r_hadamard = np.multiply(a_r, b_r).sum()
+    op = (a.sum() + b.sum())
+    return ((op_hadamard + op_r_hadamard) + np.abs(op_hadamard - op_r_hadamard)) / op if op != 0.0 else 0.0
 
 
 def get_mean_convolutional_similarity(worda, wordb):
     print('n=2:')
-    #print(get_convolutional_similarity(worda, wordb, n=2, stride=1))
-    print(get_convolutional_similarity(worda, wordb, n=3, stride=1))
-    #print(get_convolutional_similarity(worda, wordb, n=4, stride=1))
+    print(get_convolutional_similarity(worda, wordb, n=2, stride=2))
+    print(get_convolutional_similarity(worda, wordb, n=3, stride=3))
+    print(get_convolutional_similarity(worda, wordb, n=4, stride=4))
 
-    return get_convolutional_similarity(worda, wordb, n=3, stride=1)
+    return 1#get_convolutional_similarity(worda, wordb, n=3, stride=1)
 
 
-print(get_mean_convolutional_similarity('mableitung', 'ableitung'))
-print(get_mean_convolutional_similarity('gnuy mableitung', 'ableitung'))
+print(get_mean_convolutional_similarity('bearbeitung', 'ableitung'))
+print(get_mean_convolutional_similarity('rel   ', 'relhok'))
 
 #get_convolutional_similarity('aba', 'aba', n=2, stride=2)

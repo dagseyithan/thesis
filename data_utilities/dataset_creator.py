@@ -1,6 +1,6 @@
 import random
 from data_utilities.datareader import read_original_products_data, read_dataset_data
-
+import numpy as np
 
 
 def split_dataset(run = False):
@@ -67,5 +67,18 @@ def create_mixed_margin_dataset(run = False):
     return None
 
 
-#create_structuralsimilarity_dataset(True)
-
+def create_string_dataset(run = False):
+    m = 0
+    st_set = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]]
+    for i in range(0, 4):
+        for j in range(0, 4):
+            if i == 3:
+                j = 3
+            for k in range(0, 4):
+                if j == 3:
+                    k = 3
+                arr=np.column_stack((st_set[i], st_set[j], st_set[k]))
+                print(m)
+                m+=1
+                print(arr)
+create_string_dataset(True)
