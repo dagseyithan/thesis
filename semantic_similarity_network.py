@@ -2,9 +2,10 @@ from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Input, concatenat
     ReLU, Lambda, Conv1D, add, AveragePooling2D
 from keras.models import Model, load_model
 from keras.optimizers import Adam
-from keras.callbacks import TensorBoard, LambdaCallback
+from keras.callbacks import TensorBoard, LambdaCallback, EarlyStopping, ReduceLROnPlateau
 import keras.backend as K
 from config import configurations
+from data_utilities.generator import Native_DataGenerator_for_SemanticSimilarityNetwork
 import numpy as np
 from encoder import encode_word, convert_to_tensor
 from structural_similarity_network import StructuralSimilarityNetwork
@@ -13,12 +14,14 @@ import time
 DIM = 9
 MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH #10
 MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH #60
-EMBEDDING_LENGTH = configurations.FASTTEXT_VECTOR_LENGTH #300
+EMBEDDING_LENGTH = configurations.EMBEDDING_LENGTH #300
 ALPHABET_LENGTH = configurations.ALPHABET_LENGTH #54
 WORD_TO_WORD_COMBINATIONS = int(MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH) #10*10
 WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM) #(54*60/9 = 360)
 BATCH_SIZE = configurations.BATCH_SIZE
 
+
+TRAIN = True
 
 class MLPConv(Layer):
     def __init__(self, num_outputs):
@@ -66,6 +69,25 @@ class MLPLSTM(Layer):
         return (input_shape[0], 1)
 
 
+class MLPScore(Layer):
+    def __init__(self, num_outputs):
+        super(MLPScore, self).__init__()
+        self.num_outputs = num_outputs
+
+    def build(self, input_shape):
+        super(MLPScore, self).build(input_shape)
+        self.dense_1 = Dense(5, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_2 = Dense(1, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+
+    def call(self, input):
+        x = self.dense_1(input)
+        x = self.dense_2(x)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
+
+
 def SemanticSimilarityNetwork():
 
     embedded_sentence_A = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)) #(10, 300)
@@ -95,6 +117,7 @@ def SemanticSimilarityNetwork():
     MLP_pooled_2D_2x2 = MLPConv(num_outputs=(1,))
     MLP_pooled_2D_3x3 = MLPConv(num_outputs=(1,))
     MLP_pooled_lstms = MLPLSTM(num_outputs=(1,))
+    MLP_score = MLPScore(num_outputs=(1,))
 
 
     def bi_lstms_network():
@@ -152,9 +175,31 @@ def SemanticSimilarityNetwork():
     pooled_lstms = Flatten()(pooled_lstms)
     pooled_lstms = MLP_pooled_lstms(pooled_lstms)
 
-    model = Model(inputs=[embedded_sentence_A, embedded_sentence_B], outputs=[pooled_1D_2n, pooled_1D_3n, pooled_2D_2x2, pooled_2D_3x3, pooled_lstms])
+    out =  Lambda(lambda x: K.stack(x, axis=-1))([pooled_1D_2n, pooled_1D_3n, pooled_2D_2x2, pooled_2D_3x3,
+                                                   pooled_lstms])
+    out = Lambda(lambda x: K.reshape(x, (BATCH_SIZE, 5)))(out)
+    out = MLP_score(out)
+
+    model = Model(inputs=[embedded_sentence_A, embedded_sentence_B], outputs=out)
 
     return model
 
-net = SemanticSimilarityNetwork()
-net.summary()
+
+network = SemanticSimilarityNetwork()
+network.compile(optimizer=Adam(lr=0.001), loss='mean_squared_error')
+model_name = 'model_semanticsimilaritynetwork'
+
+
+
+if TRAIN:
+    #epoch_end_callback = LambdaCallback(on_epoch_end=epoch_test)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=3, factor=0.1, verbose=1, min_lr=0.000001)
+    #checkpoint_callback = ModelCheckpoint(
+        #filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
+    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork(batch_size=BATCH_SIZE)
+    network.fit_generator(generator=data_generator, shuffle=True, epochs=100, workers=1, use_multiprocessing=False,
+                        callbacks=[reduce_lr])
+    network.save('trained_models\\' + model_name + '\\' + model_name + '_' + time + '.h5')
+else:
+    #network = load_model('trained_models\model_independent_2_02_RegularRNN_Fasttext_mixedmargin.h5')
+    network.summary()

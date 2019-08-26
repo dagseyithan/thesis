@@ -1,4 +1,5 @@
-from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Input, concatenate, Bidirectional, LSTM, Reshape, Layer, ReLU, Lambda
+from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Input, concatenate, Bidirectional, LSTM, Reshape, Layer, \
+    ReLU, Lambda, add
 from keras.models import Model, load_model
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, LambdaCallback
@@ -134,33 +135,70 @@ class NonZeroMaskMatrixMean(Layer):
         return out
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0], MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
+        return (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
+
+
+class MatrixMean(Layer):
+    def __init__(self, num_outputs):
+        super(MatrixMean, self).__init__()
+        self.num_outputs = num_outputs
+
+    def build(self, input_shape):
+        super(MatrixMean, self).build(input_shape)
+
+    def call(self, input):
+        matrices_AB = input[0]
+        matrices_AB_r = input[1]
+        out = []
+        for i in range(BATCH_SIZE):
+            out.append(add([matrices_AB[i,:,:], matrices_AB_r[i,:,:]]) * 0.5)
+        out = K.stack(out, axis=0)
+        out = K.reshape(out, (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
+        return out
+
+    def compute_output_shape(self, input_shape):
+        return (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
 
 
 def StructuralSimilarityNetwork():
-    input_a = Input(shape=((36000, 9)))
-    input_b = Input(shape=((36000, 9)))
+    input_A = Input(shape=((36000, 9)))
+    input_A_r = Input(shape=((36000, 9)))
+    input_B = Input(shape=((36000, 9)))
+    input_B_r = Input(shape=((36000, 9)))
     input_mask = Input(shape=((100, 360)))
+    input_mask_r = Input(shape=((100, 360)))
 
     encoding_layer = EncodingLayer(num_outputs = (36000, 4))
     convolutional_layer = ConvolutionalLayer(num_outputs = (36000, 50))
     nonzero_mask_matrix_mean = NonZeroMaskMatrixMean((BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
+    matrix_mean = MatrixMean((BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
     mlp = MLP(num_outputs = (36000, 1))
     encoding_layer.trainable = False
     convolutional_layer.trainable = False
     mlp.trainable = False
     nonzero_mask_matrix_mean.trainable = False
 
-    encoded_a = encoding_layer(input_a)
-    encoded_b = encoding_layer(input_b)
-    conv_out_a = convolutional_layer(encoded_a)
-    conv_out_b = convolutional_layer(encoded_b)
+    encoded_A = encoding_layer(input_A)
+    encoded_A_r = encoding_layer(input_A_r)
+    encoded_B = encoding_layer(input_B)
+    encoded_B_r = encoding_layer(input_B_r)
+    conv_out_A = convolutional_layer(encoded_A)
+    conv_out_A_r = convolutional_layer(encoded_A_r)
+    conv_out_B = convolutional_layer(encoded_B)
+    conv_out_B_r = convolutional_layer(encoded_B_r)
 
-    out = concatenate([conv_out_a, conv_out_b], axis=-1)
-    out = mlp(out)
-    out = nonzero_mask_matrix_mean([out, input_mask])
+    out_AB = concatenate([conv_out_A, conv_out_B], axis=-1)
+    out_AB = mlp(out_AB)
+    out_AB = nonzero_mask_matrix_mean([out_AB, input_mask])
 
-    model = Model(inputs=[input_a, input_b, input_mask], outputs=out, name='str_sim_net')
+    out_AB_r = concatenate([conv_out_A_r, conv_out_B_r], axis=-1)
+    out_AB_r = mlp(out_AB_r)
+    out_AB_r = nonzero_mask_matrix_mean([out_AB_r, input_mask_r])
+
+    out = matrix_mean([out_AB, out_AB_r])
+
+
+    model = Model(inputs=[input_A, input_A_r, input_B, input_B_r, input_mask, input_mask_r], outputs=out, name='str_sim_net')
     model.summary()
 
     return model

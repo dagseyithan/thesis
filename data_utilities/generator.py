@@ -1,6 +1,6 @@
 from keras.utils.data_utils import Sequence
 import numpy as np
-from data_utilities.datareader import read_dataset_data, read_original_products_data, read_german_words_dictionary
+from data_utilities.datareader import read_dataset_data, read_original_products_data, read_sts_data
 from texttovector import get_ready_vector, get_ready_vector_on_batch
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 from encoder import encode_word, encode_number
@@ -335,4 +335,30 @@ def DataGenerator_for_Arc2(batch_size):
                                                     word_embedding_length=EMBEDDING_LENGTH) for sample in batch_x])
 
             yield [anchor_pos, anchor_neg], np.array(batch_y)
+
+
+
+class Native_DataGenerator_for_SemanticSimilarityNetwork(Sequence):
+    def __init__(self, batch_size):
+        sentences_A, sentences_B, scores = read_sts_data('train')
+        x_set = np.column_stack((sentences_A, sentences_B))
+        scores = minmax_scale(scores, feature_range=(0, 0.99))
+        #print(scores)
+        y_set = scores
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+
+        input_A = np.array([get_ready_vector(sample[0]) for sample in batch_x])
+        input_B = np.array([get_ready_vector(sample[1]) for sample in batch_x])
+
+
+        return [input_A, input_B], batch_y
 

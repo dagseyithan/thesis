@@ -6,7 +6,7 @@ from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDER, BATCH_SIZE, EM
 
 
 def get_ready_vector(text, padding = True, embedder = EMBEDDER):
-    text = tu.pre_process_single_return(text)
+    text = tu.pre_process_single_return(str(text))
     text_word_length = len(text.split())
 
     if text_word_length == 0:
