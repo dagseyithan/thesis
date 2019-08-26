@@ -4,7 +4,7 @@ from string import punctuation
 from nltk.corpus import stopwords
 from config import configurations
 from fasttext import __get_fasttext_word_embedding, __get_fasttext_sentence_embedding
-from elmo import __get_elmo_word_embedding
+#from elmo import __get_elmo_word_embedding
 from quantulum import load as l
 from scipy.spatial import distance
 from secos.decompound import split_compounds
@@ -53,14 +53,14 @@ def get_fasttext_word_similarity(worda = None, wordb = None):
     else:
         return 1.0 - distance.cosine(__get_fasttext_word_embedding(worda), __get_fasttext_word_embedding(wordb))
 
-
+'''
 def get_elmo_word_similarity(worda = None, wordb = None):
     if worda == None or wordb == None:
         print('comparison with null value(s)!')
         return None
     else:
         return 1.0 - distance.cosine(__get_elmo_word_embedding(worda), __get_elmo_word_embedding(wordb))
-
+'''
 
 def tokenize(text):
     words = word_tokenize(text)

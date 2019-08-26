@@ -1,6 +1,6 @@
 import numpy as np
 import text_utilities as tu
-from elmo import __get_elmo_sentence_embedding, __get_elmo_sentence_embedding_on_batch
+#from elmo import __get_elmo_sentence_embedding, __get_elmo_sentence_embedding_on_batch
 from fasttext import __get_fasttext_sentence_embedding
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDER, BATCH_SIZE, EMBEDDING_LENGTH
 
@@ -14,7 +14,7 @@ def get_ready_vector(text, padding = True, embedder = EMBEDDER):
         text_word_length = 1
 
     if embedder == 'ELMO':
-        embedding = __get_elmo_sentence_embedding(text)
+        embedding = None#__get_elmo_sentence_embedding(text)
     else:
         embedding = __get_fasttext_sentence_embedding(text)
 
@@ -34,7 +34,7 @@ def get_ready_vector_on_batch(texts, padding = True, embedder = EMBEDDER, batch_
     if embedder == 'ELMO':
         texts = [[word for word in tu.pre_process_single_return(text).split()] for text in texts]
         text_word_lengths = [len(text) for text in texts]
-        texts_embbedings = __get_elmo_sentence_embedding_on_batch(texts)
+        texts_embbedings = None#__get_elmo_sentence_embedding_on_batch(texts)
     else:
         texts = [tu.pre_process_single_return(text) for text in texts]
         text_word_lengths = [len(text.split()) for text in texts]

@@ -30,6 +30,9 @@ def get_convolutional_similarity(worda, wordb, n = 2, stride = 2):
     return total/count
 
 def get_encoded_similarity(a, b, n = 3):
+
+    #a, a_r = encoder.encode_word(a, return_reverse=True)
+    #b, b_r = encoder.encode_word(b, return_reverse=True)
     a_r = np.flip(a, axis=1)
     b_r = np.flip(b, axis=1)
 
@@ -40,84 +43,41 @@ def get_encoded_similarity(a, b, n = 3):
         while not b_r[:,0:1].any():
             b_r = np.roll(b_r, -1, axis=1)
 
-    '''
-    #print(a)
-    #print(a_r)
-    #print(b)
-    #print(b_r)
-
-    len_a = a.sum()
-    len_b = b.sum()
-    max_len = len_a if len_a > len_b else len_b
-    dist, dist_t, dist_r, dist_t_r = 0.0, 0.0, 0.0, 0.0
-    i = 0
-    for coli_at, coli_bt, coli_at_r, coli_bt_r in zip(a.transpose(), b.transpose(), a_r.transpose(), b_r.transpose()):
-        if i >= max_len:
-            break
-        dist_t += np.multiply(coli_at, coli_bt).sum()
-        dist_t_r += np.multiply(coli_at_r, coli_bt_r).sum()
-        i+=1
-    i = 0
-    for rowi_a, rowi_b in zip(a, b):
-        if rowi_a.any() and rowi_b.any():
-            dist += (hamming(rowi_a, rowi_b))
-            i+=1
-        elif (rowi_a.any() and not rowi_b.any()) or (not rowi_a.any() and rowi_b.any()):
-            i+=1
-    for rowi_a, rowi_b in zip(a_r, b_r):
-        if rowi_a.any() and rowi_b.any():
-            dist_r +=  (hamming(rowi_a, rowi_b))
-            i+=1
-        elif (rowi_a.any() and not rowi_b.any()) or (not rowi_a.any() and rowi_b.any()):
-            i+=1
-    #print(max_len)
-    #print('dist: ' + str(dist))
-    #print('dist_r: ' + str(dist_r))
-    #print('dist_t: ' + str(dist_t))
-    #print('dist_t_r: ' + str(dist_t_r))
-
-
-
-    dist = dist /max_len
-    dist_r = dist_r/max_len
-    dist_t = dist_t /max_len
-    dist_t_r = dist_t_r/max_len
-    #print('encoded_dist:')
-    #print(((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
-
     op_hadamard = np.multiply(a, b).sum()
+
     op_r_hadamard = np.multiply(a_r, b_r).sum()
+
     op = (a.sum() + b.sum())
 
-    #print(op_hadamard)
-    #print(op_r_hadamard)
-
-    #print('encoded + encoded_dist:')
-    #print()
-
-    hadamard = ((op_hadamard+op_r_hadamard)/op) if op != 0.0 else 0.0
-    encoded = (((dist_t + dist)* 1./2.0) + ((dist_r + dist_t_r) * 1./2.0))
-
-    total = (hadamard + encoded)*0.5
-
-    return total
-    '''
-    op_hadamard = np.multiply(a, b).sum()
-    op_r_hadamard = np.multiply(a_r, b_r).sum()
-    op = (a.sum() + b.sum())
-    return ((op_hadamard + op_r_hadamard) + np.abs(op_hadamard - op_r_hadamard)) / op if op != 0.0 else 0.0
+    return ((op_hadamard + op_r_hadamard) + np.abs(op_hadamard - op_r_hadamard)) / (op + 0.0000001)
 
 
 def get_mean_convolutional_similarity(worda, wordb):
-    print('n=2:')
-    print(get_convolutional_similarity(worda, wordb, n=2, stride=2))
-    print(get_convolutional_similarity(worda, wordb, n=3, stride=3))
-    print(get_convolutional_similarity(worda, wordb, n=4, stride=4))
+    #print(get_convolutional_similarity(worda, wordb, n=2, stride=2))
+    #print(get_convolutional_similarity(worda, wordb, n=3, stride=3))
+    #print(get_convolutional_similarity(worda, wordb, n=4, stride=4))
 
-    return 1#get_convolutional_similarity(worda, wordb, n=3, stride=1)
+    return get_convolutional_similarity(worda, wordb, n=3, stride=3)
 
+a = get_mean_convolutional_similarity('bearbeitung', 'bebeitung')
+#print(get_mean_convolutional_similarity('Awomanisdicingsomepeeledpotatoescutintothickstrips', 'Awomanischoppingapeeledpotatointoslices'))
+#print(get_mean_convolutional_similarity('bearbeitung', 'bebeitung'))
+#print(get_mean_convolutional_similarity('gnutiebraeb', 'gnutiebeb'))
+#print(get_mean_convolutional_similarity('rel   ', 'relhok'))
 
-print(get_mean_convolutional_similarity('bearbeitung', 'ableitung'))
-print(get_mean_convolutional_similarity('rel   ', 'relhok'))
-
+'''
+print(get_encoded_similarity('bearbeitung', 'ableitung'))
+print(get_encoded_similarity('abteilung', 'ableitung'))
+print(get_encoded_similarity('gesellschaft', 'freundschaft'))
+print(get_encoded_similarity('gesellschaft', 'ffreundschaft'))
+print(get_encoded_similarity('gesellschaft', 'fffreundschaft'))
+print(get_encoded_similarity('gesellschaft', 'fffreundschaftt'))
+print(get_encoded_similarity('gesellschaft', 'fffreundschafttt'))
+print(get_encoded_similarity('freundschaft', 'ffreundschafttt'))
+print(get_encoded_similarity('freundschaft', 'ffreund'))
+print(get_encoded_similarity('freundschaft', 'schaft'))
+print(get_encoded_similarity('freundschaft', 'shcaft'))
+print(get_encoded_similarity('freundschaft', 'freund'))
+print(get_encoded_similarity('freund', 'freund'))
+'''
 #get_convolutional_similarity('aba', 'aba', n=2, stride=2)

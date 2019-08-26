@@ -8,15 +8,15 @@ from keras.callbacks import TensorBoard, LambdaCallback, ReduceLROnPlateau, Earl
 from keras.layers.advanced_activations import ReLU
 from data_utilities.generator import Native_DataGenerator_for_StructuralSimilarityModel_Autoencoder
 import numpy as np
-DIM = 4
+DIM = 9
 
 relu = ReLU()
 relu.__name__ = 'relu'
 
 encoder_input = Input(shape=(DIM,))
-x = Dense(30)(encoder_input)
+x = Dense(90)(encoder_input)
 x = ReLU(max_value=1.0)(x)
-x = Dense(10)(x)
+x = Dense(30)(x)
 x = ReLU(max_value=1.0)(x)
 x = Dense(4)(x)
 encoder_output = ReLU(max_value=1.0)(x)
@@ -25,9 +25,9 @@ encoder = Model(encoder_input, encoder_output, name='encoder')
 encoder.summary()
 
 decoder_input = Input(shape=(4,))
-x = Dense(10)(decoder_input)
+x = Dense(30)(decoder_input)
 x = ReLU(max_value=1.0)(x)
-x = Dense(30)(x)
+x = Dense(90)(x)
 x = ReLU(max_value=1.0)(x)
 x = Dense(DIM)(x)
 decoder_output = ReLU(max_value=1.0)(x)

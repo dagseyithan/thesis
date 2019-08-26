@@ -1,5 +1,6 @@
 import numpy as np
-
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 MAX_WORD_CHARACTER_LENGTH = 60
 ALPHABET_LENGTH = 54
 
@@ -68,8 +69,8 @@ for char, code in letter.items():
 def encode_word(word, return_reverse = True):
     word = word[:MAX_WORD_CHARACTER_LENGTH]
     word_r = word[::-1]
-    word_matrix = np.zeros((MAX_WORD_CHARACTER_LENGTH, MAX_WORD_CHARACTER_LENGTH))
-    word_r_matrix = np.zeros((MAX_WORD_CHARACTER_LENGTH, MAX_WORD_CHARACTER_LENGTH))
+    word_matrix = np.zeros((ALPHABET_LENGTH, MAX_WORD_CHARACTER_LENGTH))
+    word_r_matrix = np.zeros((ALPHABET_LENGTH, MAX_WORD_CHARACTER_LENGTH))
 
     for position, (char, char_r) in enumerate(zip(word, word_r)):
         try:
@@ -100,4 +101,16 @@ def decode_matrix(m):
             if m[i, j] == 1.0:
                 word.append(letter_decode[i])
     return ''.join(word)
+
+def convert_to_tensor(matrix, dim=3):
+    tensor = []
+    nonzero_mask = []
+    for i in range(0, int(ALPHABET_LENGTH), dim):
+        for j in range(0, int(MAX_WORD_CHARACTER_LENGTH), dim):
+            mat = matrix[i:i+dim, j:j+dim]
+            nonzero_mask.append(1 if mat.any() else 0)
+            tensor.append(mat)
+    return np.array(tensor), np.array(nonzero_mask)
+
+
 

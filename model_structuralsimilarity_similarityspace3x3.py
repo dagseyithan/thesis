@@ -63,5 +63,5 @@ reduce_lr_callback = ReduceLROnPlateau(monitor='loss', patience=10, factor=0.1, 
 early_stopping_callback = EarlyStopping(monitor='loss', min_delta=0.0, patience=100)
 
 data_generator = Native_DataGenerator_for_StructuralSimilarityModel_SimilaritySpace3x3(batch_size=20)
-model.fit_generator(generator=data_generator, shuffle=True, epochs=500, workers=4, use_multiprocessing=False, callbacks=[tensorboard, reduce_lr_callback, early_stopping_callback])
-model.save(filepath='trained_models/'+model_name + time_stamp+'.h5')
+#model.fit_generator(generator=data_generator, shuffle=True, epochs=500, workers=4, use_multiprocessing=False, callbacks=[tensorboard, reduce_lr_callback, early_stopping_callback])
+#model.save(filepath='trained_models/'+model_name + time_stamp+'.h5')

@@ -19,14 +19,14 @@ def create_network():
 
 
     def common_network():
-        layers = [LSTM(units=18, activation='relu', return_sequences=True, input_shape=(DIM, 1)),
-                  LSTM(units=18, activation='relu', return_sequences=True),
-                  LSTM(units=18, activation='relu', return_sequences=True),
-                  LSTM(units=18, activation='relu', return_sequences=True),
-                  LSTM(units=18, activation='relu', return_sequences=True),
-                  LSTM(units=18, activation='relu', return_sequences=True),
-                  LSTM(units=18, activation='relu', return_sequences=True),
-                  LSTM(units=18, activation='relu', return_sequences=True),
+        layers = [LSTM(units=18, activation='sigmoid', return_sequences=True, input_shape=(DIM, 1)),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
+                  LSTM(units=18, activation='sigmoid', return_sequences=True),
                   LSTM(units=1, activation='relu', return_sequences=False)
                   ]
 
