@@ -196,9 +196,14 @@ if TRAIN:
     reduce_lr = ReduceLROnPlateau(monitor='loss', patience=3, factor=0.1, verbose=1, min_lr=0.000001)
     #checkpoint_callback = ModelCheckpoint(
         #filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
+    tensorboard = TensorBoard(log_dir='./logs/'+ model_name, histogram_freq=0,
+                              batch_size=200,
+                              write_graph=True, write_grads=False, write_images=False, embeddings_freq=0,
+                              embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None,
+                              update_freq='batch')
     data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork(batch_size=BATCH_SIZE)
     network.fit_generator(generator=data_generator, shuffle=True, epochs=100, workers=1, use_multiprocessing=False,
-                        callbacks=[reduce_lr])
+                        callbacks=[reduce_lr, tensorboard])
     network.save('trained_models\\' + model_name + '\\' + model_name + '_' + time + '.h5')
 else:
     #network = load_model('trained_models\model_independent_2_02_RegularRNN_Fasttext_mixedmargin.h5')
