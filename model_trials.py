@@ -1,122 +1,173 @@
-from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Input, concatenate, Bidirectional, LSTM, Reshape, Layer
+from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Input, concatenate, Bidirectional, LSTM, Reshape, Layer, \
+    ReLU, Lambda, Conv1D, add, AveragePooling2D, TimeDistributed
 from keras.models import Model, load_model
-from keras.optimizers import Adam, Adagrad
-from keras.callbacks import TensorBoard, LambdaCallback
+from keras.optimizers import Adam
+from keras.callbacks import TensorBoard, LambdaCallback, EarlyStopping, ReduceLROnPlateau
 import keras.backend as K
-import tensorflow as tf
-from data_utilities.generator import Native_DataGenerator_for_StructuralSimilarityModel_LSTMEncoder3x3
-from encoder import encode_number
+from config import configurations
+from data_utilities.generator import Native_DataGenerator_for_SemanticSimilarityNetwork
 import numpy as np
-from encoder import encode_word, convert_to_tensor
+from texttovector import get_ready_vector, get_ready_vector_on_batch
 import time
-DIM = 18
-EPSILON = 0.0000001
+from data_utilities.datareader import read_sts_data
+from sklearn.preprocessing import minmax_scale
+
+DIM = 9
+MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH #10
+MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH #60
+EMBEDDING_LENGTH = configurations.EMBEDDING_LENGTH #300
+ALPHABET_LENGTH = configurations.ALPHABET_LENGTH #54
+WORD_TO_WORD_COMBINATIONS = int(MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH) #10*10
+WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM) #(54*60/9 = 360)
+BATCH_SIZE = configurations.BATCH_SIZE
 
 
-class SimilarityLayer(Layer):
+TRAIN = True
+
+class MLPConv(Layer):
     def __init__(self, num_outputs):
-      super(SimilarityLayer, self).__init__()
-      self.model_name = 'model_structuralsimilarity_similarityspace3x320190730170704.h5'
-      self.num_outputs = num_outputs
-      self.similarity = load_model('trained_models/' + self.model_name)
-
-    def build(self, input_shape):
-      super(SimilarityLayer, self).build(input_shape)
-
-    def call(self, input):
-      in1 = K.eval(input[0])
-      in2 = K.eval(input[1])
-      mask = K.eval(input[2])
-      output = []
-      sum = []
-      count = 0
-      for i in range(1):
-          w1 = np.squeeze(in1[i, :, :])
-          w2 = np.squeeze(in2[i, :, :])
-          #print(mask.shape)
-          #print(mask)
-          non_zero = np.sum(mask, 1)#non_zero_mask(w1, w2)
-          #print(non_zero)
-          result = self.similarity.predict_on_batch([K.variable(w1), K.variable(w2)])
-          #print(result)
-          result = np.reshape(result, (100, 360))
-          #print(result)
-          result = np.sum(result, 1)/(non_zero + EPSILON)
-          output.append(result)
-      return K.variable(np.reshape(np.array(output), (10, 10)))
-
-class EncodingLayer(Layer):
-    def __init__(self, num_outputs):
-        super(EncodingLayer, self).__init__()
+        super(MLPConv, self).__init__()
         self.num_outputs = num_outputs
-        self.encoder = load_model('trained_models\model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
 
     def build(self, input_shape):
-        super(EncodingLayer, self).build(input_shape)
+        super(MLPConv, self).build(input_shape)
+        self.dense_1 = Dense(100, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_2 = Dense(50, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_3 = Dense(25, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_4 = Dense(1, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
 
     def call(self, input):
-        return self.encoder.predict_on_batch(K.eval(input))
+        x = self.dense_1(input)
+        x = self.dense_2(x)
+        x = self.dense_3(x)
+        x = self.dense_4(x)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
 
 
-encoder = load_model('trained_models\model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
-model_name = 'model_structuralsimilarity_similarityspace3x320190730170704.h5'
+class MLPLSTM(Layer):
+    def __init__(self, num_outputs):
+        super(MLPLSTM, self).__init__()
+        self.num_outputs = num_outputs
 
-similarity_model = load_model('trained_models/' + model_name)
-for layer in similarity_model.layers:
-    print(layer.get_config())
-'''
+    def build(self, input_shape):
+        super(MLPLSTM, self).build(input_shape)
+        self.dense_1 = Dense(1000, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_2 = Dense(100, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_3 = Dense(10, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_4 = Dense(1, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
 
-def create_network():
+    def call(self, input):
+        x = self.dense_1(input)
+        x = self.dense_2(x)
+        x = self.dense_3(x)
+        x = self.dense_4(x)
+        return x
 
-    input_a = Input(shape=((36000, 9)))
-    input_b = Input(shape=((36000, 9)))
-    input_mask = Input(shape=((100, 360)))
-
-    encoding_layer = EncodingLayer((36000, 4))
-    encoding_layer.trainable = False
-    #similarity_layer = SimilarityLayer((10, 10))
-    #similarity_layer.trainable = False
-
-
-    encoded_a = encoding_layer(input_a)
-    encoded_b = encoding_layer(input_b)
-
-    #out = similarity_layer([K.variable(encoded_a), K.variable(encoded_b), K.variable(input_mask)])
-    out = concatenate([encoded_a, encoded_b])
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
 
 
-    model = Model(inputs=[input_a, input_b, input_mask], outputs=out)
+class MLPScore(Layer):
+    def __init__(self, num_outputs):
+        super(MLPScore, self).__init__()
+        self.num_outputs = num_outputs
+
+    def build(self, input_shape):
+        super(MLPScore, self).build(input_shape)
+        self.dense_1 = Dense(5, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_2 = Dense(1, activation='relu', kernel_initializer='glorot_uniform', use_bias=True)
+
+    def call(self, input):
+        x = self.dense_1(input)
+        x = self.dense_2(x)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
+
+
+def SemanticSimilarityNetwork():
+
+    embedded_sentence_A = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)) #(20, 300)
+    embedded_sentence_B = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)) #(20, 300)
+
+
+
+
+    def bi_lstms_network():
+        layers = [
+                  Bidirectional(LSTM(units=300, activation='sigmoid', return_sequences=True,
+                                     kernel_initializer='glorot_uniform', bias_initializer='glorot_uniform',
+                                     input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat'),
+                  Bidirectional(LSTM(units=600, activation='sigmoid', return_sequences=True,
+                                     kernel_initializer='glorot_uniform', bias_initializer='glorot_uniform',
+                                     input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat'),
+                  TimeDistributed(Dense(600, activation='relu')),
+                  TimeDistributed(Dense(300, activation='relu')),
+                  TimeDistributed(Dense(100, activation='relu')),
+                  TimeDistributed(Dense(30, activation='relu')),
+                 ]
+
+        def shared_layers(x):
+            for layer in layers:
+                x = layer(x)
+            return x
+        return shared_layers
+
+    bi_lstms = bi_lstms_network()
+
+    out_A = bi_lstms(embedded_sentence_A)
+    out_B = bi_lstms(embedded_sentence_B)
+
+
+
+    out = concatenate([out_A, out_B])
+    out = Flatten()(out)
+    out = Dense(1200, activation='relu')(out)
+    out = Dense(600, activation='relu')(out)
+    out = Dense(200, activation='relu')(out)
+    out = Dense(100, activation='relu')(out)
+    out = Dense(10, activation='relu')(out)
+    out = Dense(1, activation='relu')(out)
+    #out = MLP_score(out)
+
+    model = Model(inputs=[embedded_sentence_A, embedded_sentence_B], outputs=out)
 
     return model
 
 
+network = SemanticSimilarityNetwork()
+network.compile(optimizer=Adam(lr=0.01), loss='mean_squared_error', metrics=['mean_absolute_error'])
+network.summary()
+model_name = 'model_semanticsimilaritynetwork'
 
-model = create_network()
-model.summary()
-model.compile(optimizer=Adam(lr=0.001), loss='mean_squared_error')
+sentences_A, sentences_B, scores = read_sts_data('test')
+sentences_A = np.array([get_ready_vector(sentence) for sentence in sentences_A[0:100]])
+sentences_B = np.array([get_ready_vector(sentence) for sentence in sentences_B[0:100]])
 
-m = encode_word('baba', return_reverse=False)
-s1, s1_mask = convert_to_tensor(m)
-s1 = np.expand_dims(s1, 0)
-s1 = np.repeat(s1, 100, 0)
-#print(s1)
-s1 = np.reshape(s1, (1, 36000, 9))
-#print(s1)
+scores = scores[0:100]
 
-m = encode_word('baba', return_reverse=False)
-s2, s2_mask = convert_to_tensor(m)
-s2 = np.expand_dims(s2, 0)
-#print(s2)
-s2 = np.repeat(s2, 100, 0)
-s2 = np.reshape(s2, (1, 36000, 9))
-#print(s2)
-mask = np.logical_or(s1_mask, s2_mask)*1
-mask = np.expand_dims(mask, 0)
-#print(mask)
-mask = np.repeat(mask, 100, 0)
+val_data = [[sentences_A, sentences_B], scores]
 
-print(s1.shape)
-print(s1.dtype)
 
-model.predict_on_batch([s1, s2, mask])
-'''
+
+if TRAIN:
+    #epoch_end_callback = LambdaCallback(on_epoch_end=epoch_test)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=5, factor=0.1, verbose=1, min_lr=0.000001)
+    #checkpoint_callback = ModelCheckpoint(
+        #filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
+    tensorboard = TensorBoard(log_dir='./logs/'+ model_name, histogram_freq=0,
+                              batch_size=BATCH_SIZE,
+                              write_graph=True, write_grads=False, write_images=False, embeddings_freq=0,
+                              embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None,
+                              update_freq='batch')
+    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork(batch_size=BATCH_SIZE)
+    network.fit_generator(generator=data_generator,validation_data=val_data,shuffle=True, epochs=500, workers=1, use_multiprocessing=False,
+                        callbacks=[reduce_lr, tensorboard])
+    network.save('trained_models/' + model_name + '/' + model_name + '_' + time.strftime("%Y%m%d%H%M%S") + '.h5')
+else:
+    #network = load_model('trained_models\model_independent_2_02_RegularRNN_Fasttext_mixedmargin.h5')
+    network.summary()
