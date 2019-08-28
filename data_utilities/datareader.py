@@ -31,11 +31,12 @@ def read_german_words_dictionary():
 
 def read_sts_data(mode = 'train'):
     if mode == 'train':
-        data = pandas.read_csv(dataset_file_path + 'sts_train.csv', sep='\t', error_bad_lines=False)
+        data = pandas.read_csv(dataset_file_path + 'sts_train.csv', header=None, sep='\t', error_bad_lines=False)
     elif mode == 'test':
-        data = pandas.read_csv(dataset_file_path + 'sts_test.csv', header=0, sep=' ', encoding='utf-8')
+        data = pandas.read_csv(dataset_file_path + 'sts_test.csv', header=None, sep='\t', error_bad_lines=False,
+                            engine='python')
     elif mode == 'split':
-        data = pandas.read_csv(dataset_file_path + 'sts_mixed.csv', header=0, sep=' ', encoding='utf-8')
+        data = pandas.read_csv(dataset_file_path + 'sts_mixed.csv', header=0, sep='\t', error_bad_lines=False)
 
     sentence_A, sentence_B, scores = data[data.columns[5]].to_numpy(), data[data.columns[6]].to_numpy(), \
                                      data[data.columns[4]].to_numpy()

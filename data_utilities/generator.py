@@ -339,12 +339,12 @@ def DataGenerator_for_Arc2(batch_size):
 
 
 class Native_DataGenerator_for_SemanticSimilarityNetwork(Sequence):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, dataset_size):
         sentences_A, sentences_B, scores = read_sts_data('train')
-        x_set = np.column_stack((sentences_A, sentences_B))
+        x_set = np.column_stack((sentences_A[0:dataset_size], sentences_B[0:dataset_size]))
         scores = minmax_scale(scores, feature_range=(0, 0.99))
         #print(scores)
-        y_set = scores
+        y_set = scores[0:dataset_size]
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
 
@@ -355,10 +355,15 @@ class Native_DataGenerator_for_SemanticSimilarityNetwork(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
+        '''
+        input_k = np.array([print(sample[0]) for sample in batch_x])
+        input_c = np.array([print(sample[1]) for sample in batch_x])
+        input_m = np.array([print(sample) for sample in batch_y])
 
+        input('\n')
+        '''
         input_A = np.array([get_ready_vector(sample[0]) for sample in batch_x])
         input_B = np.array([get_ready_vector(sample[1]) for sample in batch_x])
-
 
         return [input_A, input_B], batch_y
 

@@ -9,6 +9,7 @@ config.read(config_path)
 LANGUAGE = config['GENERAL']['language']
 FASTTEXT_VECTOR_LENGTH = int(config['GENERAL']['fasttext_vector_length'])
 ELMO_VECTOR_LENGTH = int(config['GENERAL']['elmo_vector_length'])
+GLOVE_VECTOR_LENGTH = int(config['GENERAL']['glove_vector_length'])
 MAX_TEXT_WORD_LENGTH = int(config['GENERAL']['max_text_word_length'])
 MAX_WORD_CHARACTER_LENGTH = int(config['GENERAL']['max_word_character_length'])
 ALPHABET_LENGTH = int(config['GENERAL']['alphabet_length'])
@@ -19,8 +20,10 @@ BATCH_SIZE = int(config['GENERAL']['batch_size'])
 
 if EMBEDDER == 'FASTTEXT':
     EMBEDDING_LENGTH = FASTTEXT_VECTOR_LENGTH
-else:
+elif EMBEDDER == 'ELMO':
     EMBEDDING_LENGTH = ELMO_VECTOR_LENGTH
+else:
+    EMBEDDING_LENGTH = GLOVE_VECTOR_LENGTH
 
 LINUX_FASTTEXT_GERMAN_EMBEDDINGS_MODEL_PATH = config['PATH_LINUX']['fasttext_german_embeddings_model_path']
 LINUX_FASTTEXT_ENGLISH_EMBEDDINGS_MODEL_PATH = config['PATH_LINUX']['fasttext_english_embeddings_model_path']

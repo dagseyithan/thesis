@@ -34,6 +34,12 @@ GERMAN_PREPOSITIONS = ['über', 'oben', 'nach', 'gegen', 'unter', 'um', 'wie', '
                        'gegenüber', 'heraus', 'außerhalb', 'über', 'pro', 'plus', 'seit', 'als', 'bis', 'hinauf',
                        'mit', 'innerhalb', 'ohne', 'zu', 'zum', 'zur']
 
+ABBREVIATIONS = ['don''t', 'doesn''t', 'haven''t', 'hasn''t', 'hadn''t', 'wouldn''t', 'needn''t', 'shouldn''t', 'shan''t', 'won''t', 'isn''t', 'I''m']
+ABBREVIATIONS_DETACHED = ['do not', 'does not', 'have not', 'has not', 'had not', 'would not', 'need not', 'should not', 'shall not', 'will not', 'is not', 'I am']
+
+
+def detach_abbreviations(sentence):
+    return ' '.join([ABBREVIATIONS_DETACHED[ABBREVIATIONS.index(word)] if word in ABBREVIATIONS else word for word in sentence.split()])
 
 def get_ngrams(text, n=1):
     '''
@@ -188,11 +194,10 @@ def pre_process(text):
     text = text.lower()
     text = remove_punctuation(text)
     text = separate_numerals(text)
-    print(text)
     #text = remove_single_characters(text)
     #if has_units(text):
         #text = remove_units(text)
-    text = split_compounds(text)
+    #text = split_compounds(text)
     simply_processed_text = text
     text, numerals = extract_numerals(text)
     extracted = text
@@ -212,18 +217,13 @@ def pre_process_single_return(text):
     text = text.lower()
     text = remove_punctuation(text)
     text = separate_numerals(text)
+    if configurations.LANGUAGE == 'ENGLISH':
+        text = detach_abbreviations(text)
     #text = remove_single_characters(text)
     #if has_units(text):
         #text = remove_units(text)
-    text = split_compounds(text)
+    #text = split_compounds(text)
     simply_processed_text = text
-    text, numerals = extract_numerals(text)
-    extracted = text
-    if text == '' or text == ' ': #extremely rare but sometimes nltk.postagger missclassifies POS tags, leading to erroneous extraction.
-        return ''
-    for numeral in numerals:
-        text = text + ' ' + str(numeral)
-
     return simply_processed_text
 
 

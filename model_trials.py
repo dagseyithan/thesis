@@ -11,6 +11,7 @@ from texttovector import get_ready_vector, get_ready_vector_on_batch
 import time
 from data_utilities.datareader import read_sts_data
 from sklearn.preprocessing import minmax_scale
+import tensorflow as tf
 
 DIM = 9
 MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH #10
@@ -21,6 +22,22 @@ WORD_TO_WORD_COMBINATIONS = int(MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH) #10
 WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM) #(54*60/9 = 360)
 BATCH_SIZE = configurations.BATCH_SIZE
 
+
+def correlation_coefficient_loss(y_true, y_pred):
+    x = y_true
+    y = y_pred
+    mx = K.mean(x)
+    my = K.mean(y)
+    xm, ym = x-mx, y-my
+    r_num = K.sum(tf.multiply(xm,ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    r = r_num / r_den
+
+    r = K.maximum(K.minimum(r, 1.0), -1.0)
+    return 1 - K.square(r)
+
+def tf_pearson(y_true, y_pred):
+    return tf.contrib.metrics.streaming_pearson_correlation(y_pred, y_true)[1]
 
 TRAIN = True
 
@@ -91,18 +108,18 @@ class MLPScore(Layer):
 
 def SemanticSimilarityNetwork():
 
-    embedded_sentence_A = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)) #(20, 300)
-    embedded_sentence_B = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)) #(20, 300)
+    embedded_sentence_A = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
+    embedded_sentence_B = Input(shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH))
 
 
 
 
     def bi_lstms_network():
         layers = [
-                  Bidirectional(LSTM(units=300, activation='sigmoid', return_sequences=True,
+                  Bidirectional(LSTM(units=150, activation='sigmoid', return_sequences=True,
                                      kernel_initializer='glorot_uniform', bias_initializer='glorot_uniform',
                                      input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat'),
-                  Bidirectional(LSTM(units=600, activation='sigmoid', return_sequences=True,
+                  Bidirectional(LSTM(units=300, activation='sigmoid', return_sequences=True,
                                      kernel_initializer='glorot_uniform', bias_initializer='glorot_uniform',
                                      input_shape=(MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH)), merge_mode='concat'),
                   TimeDistributed(Dense(600, activation='relu')),
@@ -126,12 +143,8 @@ def SemanticSimilarityNetwork():
 
     out = concatenate([out_A, out_B])
     out = Flatten()(out)
-    out = Dense(1200, activation='relu')(out)
     out = Dense(600, activation='relu')(out)
-    out = Dense(200, activation='relu')(out)
-    out = Dense(100, activation='relu')(out)
-    out = Dense(10, activation='relu')(out)
-    out = Dense(1, activation='relu')(out)
+    out = Dense(1, activation='sigmoid')(out)
     #out = MLP_score(out)
 
     model = Model(inputs=[embedded_sentence_A, embedded_sentence_B], outputs=out)
@@ -140,14 +153,14 @@ def SemanticSimilarityNetwork():
 
 
 network = SemanticSimilarityNetwork()
-network.compile(optimizer=Adam(lr=0.01), loss='mean_squared_error', metrics=['mean_absolute_error'])
+network.compile(optimizer=Adam(lr=0.001), loss='mean_squared_error', metrics=['mean_absolute_error', tf_pearson])
 network.summary()
 model_name = 'model_semanticsimilaritynetwork'
 
 sentences_A, sentences_B, scores = read_sts_data('test')
 sentences_A = np.array([get_ready_vector(sentence) for sentence in sentences_A[0:100]])
 sentences_B = np.array([get_ready_vector(sentence) for sentence in sentences_B[0:100]])
-
+scores = minmax_scale(scores, feature_range=(0, 0.99))
 scores = scores[0:100]
 
 val_data = [[sentences_A, sentences_B], scores]
@@ -156,7 +169,7 @@ val_data = [[sentences_A, sentences_B], scores]
 
 if TRAIN:
     #epoch_end_callback = LambdaCallback(on_epoch_end=epoch_test)
-    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=5, factor=0.1, verbose=1, min_lr=0.000001)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=5, factor=0.1, verbose=1, min_lr=0.0001)
     #checkpoint_callback = ModelCheckpoint(
         #filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
     tensorboard = TensorBoard(log_dir='./logs/'+ model_name, histogram_freq=0,
@@ -165,6 +178,7 @@ if TRAIN:
                               embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None,
                               update_freq='batch')
     data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork(batch_size=BATCH_SIZE)
+    K.get_session().run(tf.local_variables_initializer())
     network.fit_generator(generator=data_generator,validation_data=val_data,shuffle=True, epochs=500, workers=1, use_multiprocessing=False,
                         callbacks=[reduce_lr, tensorboard])
     network.save('trained_models/' + model_name + '/' + model_name + '_' + time.strftime("%Y%m%d%H%M%S") + '.h5')
