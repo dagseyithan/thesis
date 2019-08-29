@@ -225,11 +225,10 @@ epochs = 100
 model_name = model_head + '/' + configurations.EMBEDDER+str(EMBEDDING_LENGTH) + '_dset=' + dset + '_bsize=' + str(BATCH_SIZE) +'_ep=' + str(epochs)+  '_act=' + selected_activation + '_slen=' + str(configurations.MAX_TEXT_WORD_LENGTH) \
              + '_dsize=' + str(dataset_size)+ '_tsize=' + str(test_size)+ '_' + time + '.h5'
 
-sentences_A, sentences_B, scores = read_sick_data('test')
-sentences_A = np.array([get_ready_vector(sentence) for sentence in sentences_A[0:test_size]])
-sentences_B = np.array([get_ready_vector(sentence) for sentence in sentences_B[0:test_size]])
-#scores = minmax_scale(scores, feature_range=(0, 0.99))
-scores = scores[0:test_size]
+sentences_A, sentences_B, labels = read_sick_data('test')
+sentences_A = np.array([get_ready_vector(sentence) for sentence in sentences_A])
+sentences_B = np.array([get_ready_vector(sentence) for sentence in sentences_B])
+scores = labels
 
 val_data = [[sentences_A, sentences_B], scores]
 
