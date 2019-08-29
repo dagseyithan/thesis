@@ -1,12 +1,13 @@
 from keras.utils.data_utils import Sequence
 import numpy as np
-from data_utilities.datareader import read_dataset_data, read_original_products_data, read_sts_data
+from data_utilities.datareader import read_dataset_data, read_original_products_data, read_sts_data, read_sick_data
 from texttovector import get_ready_vector, get_ready_vector_on_batch
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 from encoder import encode_word, encode_number
 from sklearn.preprocessing import minmax_scale
 from structural import get_encoded_similarity
 from keras.models import load_model
+import pandas as pd
 
 COMBINATION_COUNT = 1944
 
@@ -338,13 +339,43 @@ def DataGenerator_for_Arc2(batch_size):
 
 
 
-class Native_DataGenerator_for_SemanticSimilarityNetwork(Sequence):
+class Native_DataGenerator_for_SemanticSimilarityNetwork_STS(Sequence):
     def __init__(self, batch_size, dataset_size):
         sentences_A, sentences_B, scores = read_sts_data('train')
         x_set = np.column_stack((sentences_A[0:dataset_size], sentences_B[0:dataset_size]))
-        scores = minmax_scale(scores, feature_range=(0, 0.99))
+        #scores = minmax_scale(scores, feature_range=(0, 0.99))
         #print(scores)
         y_set = scores[0:dataset_size]
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        '''
+        input_k = np.array([print(sample[0]) for sample in batch_x])
+        input_c = np.array([print(sample[1]) for sample in batch_x])
+        input_m = np.array([print(sample) for sample in batch_y])
+
+        input('\n')
+        '''
+        input_A = np.array([get_ready_vector(sample[0]) for sample in batch_x])
+        input_B = np.array([get_ready_vector(sample[1]) for sample in batch_x])
+
+        return [input_A, input_B], batch_y
+
+
+class Native_DataGenerator_for_SemanticSimilarityNetwork_SICK(Sequence):
+    def __init__(self, batch_size, dataset_size):
+        sentences_A, sentences_B, labels = read_sick_data('train')
+        x_set = np.column_stack((sentences_A[0:dataset_size], sentences_B[0:dataset_size]))
+        #scores = minmax_scale(scores, feature_range=(0, 0.99))
+        #print(scores)
+        y_set = labels[0:dataset_size]
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
 

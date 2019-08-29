@@ -3,6 +3,7 @@ import text_utilities as tu
 #from elmo import __get_elmo_sentence_embedding, __get_elmo_sentence_embedding_on_batch
 from glove import __get_glove_sentence_embedding
 from fasttext import __get_fasttext_sentence_embedding
+from encoder import encode_word, convert_to_tensor
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDER, BATCH_SIZE, EMBEDDING_LENGTH
 
 
@@ -58,5 +59,12 @@ def get_ready_vector_on_batch(texts, padding = True, embedder = EMBEDDER, batch_
 
     else:
         return texts_embbedings
+
+
+def get_ready_tensor(word, return_reverse=True):
+    m, m_r = encode_word(word, return_reverse=return_reverse)
+    t = convert_to_tensor(m)
+    t_r = convert_to_tensor(m_r)
+
 
 

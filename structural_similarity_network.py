@@ -12,11 +12,12 @@ import time
 DIM = 9
 EPSILON = configurations.EPSILON
 BATCH_SIZE = configurations.BATCH_SIZE
-ALPHABET_LENGTH = configurations.ALPHABET_LENGTH
+ALPHABET_LENGTH = configurations.ALPHABET_LENGTH #54
 MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH
-MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH
+MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH #60
 WORD_TO_WORD_COMBINATIONS = MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH
-WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM)
+WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM) #360
+ENCODER_EMBEDDING_DIM = 4
 
 
 class EncodingLayer(Layer):
@@ -131,11 +132,11 @@ class NonZeroMaskMatrixMean(Layer):
         for i in range(BATCH_SIZE):
             out.append(K.sum(matrices[i,:,:], axis=-1) / (K.sum(mask[i,:,:], axis=-1) + EPSILON))
         out = K.stack(out, axis=0)
-        out = K.reshape(out, (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
+        out = K.reshape(out, (input[0].shape[0], MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
         return out
 
     def compute_output_shape(self, input_shape):
-        return (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
+        return (input_shape[0][0], MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
 
 
 class MatrixMean(Layer):
@@ -157,22 +158,22 @@ class MatrixMean(Layer):
         return out
 
     def compute_output_shape(self, input_shape):
-        return (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
+        return (input_shape[0][0], MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH)
 
 
 def StructuralSimilarityNetwork():
-    input_A = Input(shape=((36000, 9)))
-    input_A_r = Input(shape=((36000, 9)))
-    input_B = Input(shape=((36000, 9)))
-    input_B_r = Input(shape=((36000, 9)))
-    input_mask = Input(shape=((100, 360)))
-    input_mask_r = Input(shape=((100, 360)))
+    input_A = Input(shape=((WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, DIM)))
+    input_A_r = Input(shape=((WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, DIM)))
+    input_B = Input(shape=((WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, DIM)))
+    input_B_r = Input(shape=((WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, DIM)))
+    input_mask = Input(shape=((WORD_TO_WORD_COMBINATIONS, WORD_TENSOR_DEPTH)))
+    input_mask_r = Input(shape=((WORD_TO_WORD_COMBINATIONS, WORD_TENSOR_DEPTH)))
 
-    encoding_layer = EncodingLayer(num_outputs = (36000, 4))
-    convolutional_layer = ConvolutionalLayer(num_outputs = (36000, 50))
+    encoding_layer = EncodingLayer(num_outputs = (WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, ENCODER_EMBEDDING_DIM))
+    convolutional_layer = ConvolutionalLayer(num_outputs = (WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, 50))
     nonzero_mask_matrix_mean = NonZeroMaskMatrixMean((BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
     matrix_mean = MatrixMean((BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
-    mlp = MLP(num_outputs = (36000, 1))
+    mlp = MLP(num_outputs = (WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, 1))
     encoding_layer.trainable = False
     convolutional_layer.trainable = False
     mlp.trainable = False
@@ -203,7 +204,8 @@ def StructuralSimilarityNetwork():
 
     return model
 
-
+model = StructuralSimilarityNetwork()
+model.summary()
 '''
 model = StructuralSimilarityNetwork()
 model.summary()
