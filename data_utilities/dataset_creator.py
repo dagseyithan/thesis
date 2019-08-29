@@ -90,17 +90,17 @@ def split_dataset_sick():
                                      data[data.columns[3]].to_numpy().tolist()
     randi = np.random.randint(low=0, high=len(sentences_A), size=1000).tolist()
 
-    sentences_A = [sentences_A[ind] for ind, x in enumerate(sentences_A) if ind not in randi]
-    sentences_B = [sentences_B[ind] for ind, x in enumerate(sentences_B) if ind not in randi]
-    labels = [labels[ind] for ind, x in enumerate(labels) if ind not in randi]
+    sentences_A_train = [sentences_A[ind] for ind, x in enumerate(sentences_A) if ind not in randi]
+    sentences_B_train = [sentences_B[ind] for ind, x in enumerate(sentences_B) if ind not in randi]
+    labels_train = [labels[ind] for ind, x in enumerate(labels) if ind not in randi]
 
-    sentences_A_t = [sentences_A[ind] for ind, x in enumerate(sentences_A) if ind  in randi]
-    sentences_B_t = [sentences_B[ind] for ind, x in enumerate(sentences_B) if ind  in randi]
+    sentences_A_t = [sentences_A[ind] for ind, x in enumerate(sentences_A) if ind in randi]
+    sentences_B_t = [sentences_B[ind] for ind, x in enumerate(sentences_B) if ind in randi]
     labels_t = [labels[ind] for ind, x in enumerate(labels) if ind in randi]
 
     with open(r'C:\Users\seyit\PycharmProjects\thesis\data\sick_train.txt','w', encoding='utf-8') as file:
-        for i in range(0, len(sentences_A)):
-            file.writelines(sentences_A[i]+'\t'+sentences_B[i]+'\t'+labels[i]+'\n')
+        for i in range(0, len(sentences_A_train)):
+            file.writelines(sentences_A_train[i]+'\t'+sentences_B_train[i]+'\t'+labels_train[i]+'\n')
     with open(r'C:\Users\seyit\PycharmProjects\thesis\data\sick_test.txt','w', encoding='utf-8') as file:
         for i in range(0, len(sentences_A_t)):
             file.writelines(sentences_A_t[i]+'\t'+sentences_B_t[i]+'\t'+labels_t[i]+'\n')
