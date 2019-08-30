@@ -85,7 +85,6 @@ def read_msr_data(mode = 'train'):
                                          data[data.columns[0]].to_numpy()
         labels = np.array(to_categorical(labels, num_classes=3))
 
-    print(sentence_A)
 
     return sentence_A, sentence_B, labels
 

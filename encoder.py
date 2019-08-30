@@ -1,8 +1,9 @@
 import numpy as np
 import sys
+from config import configurations
 np.set_printoptions(threshold=sys.maxsize)
-MAX_WORD_CHARACTER_LENGTH = 60
-ALPHABET_LENGTH = 54
+MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH
+ALPHABET_LENGTH = configurations.ALPHABET_LENGTH
 
 letter = {}
 letter['a'] = 0
@@ -61,7 +62,6 @@ letter['8'] = 52
 letter['9'] = 53
 
 
-
 letter_decode = {}
 for char, code in letter.items():
     letter_decode[code] = char
@@ -77,8 +77,8 @@ def encode_word(word, return_reverse = True):
             word_matrix[letter[char], position] = 1
             word_r_matrix[letter[char_r], position] = 1
         except KeyError:
-            word_matrix[letter['a'], position] = 1
-            word_r_matrix[letter['a'], position] = 1
+            word_matrix[letter['a'], position] = 0
+            word_r_matrix[letter['a'], position] = 0
     if return_reverse:
         return word_matrix, word_r_matrix
     else:
@@ -111,6 +111,5 @@ def convert_to_tensor(matrix, dim=3):
             nonzero_mask.append(1 if mat.any() else 0)
             tensor.append(mat)
     return np.array(tensor), np.array(nonzero_mask)
-
 
 

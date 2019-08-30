@@ -1,15 +1,25 @@
 from keras.utils.data_utils import Sequence
 import numpy as np
 from data_utilities.datareader import read_dataset_data, read_original_products_data, read_sts_data, read_sick_data
-from texttovector import get_ready_vector, get_ready_vector_on_batch
+from texttovector import get_ready_vector, get_ready_vector_on_batch, get_ready_tensors
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH
 from encoder import encode_word, encode_number
 from sklearn.preprocessing import minmax_scale
 from structural import get_encoded_similarity
 from keras.models import load_model
+from config import configurations
 import pandas as pd
 
 COMBINATION_COUNT = 1944
+
+DIM = 9
+MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH
+MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH
+EMBEDDING_LENGTH = configurations.EMBEDDING_LENGTH
+ALPHABET_LENGTH = configurations.ALPHABET_LENGTH
+WORD_TO_WORD_COMBINATIONS = int(MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH)
+WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM)
+BATCH_SIZE = configurations.BATCH_SIZE
 
 
 def get_combinations_on_batch(batch_a, batch_b, max_text_length, word_embedding_length, window_size = 3):
@@ -340,12 +350,10 @@ def DataGenerator_for_Arc2(batch_size):
 
 
 class Native_DataGenerator_for_SemanticSimilarityNetwork_STS(Sequence):
-    def __init__(self, batch_size, dataset_size):
+    def __init__(self, batch_size):
         sentences_A, sentences_B, scores = read_sts_data('train')
-        x_set = np.column_stack((sentences_A[0:dataset_size], sentences_B[0:dataset_size]))
-        #scores = minmax_scale(scores, feature_range=(0, 0.99))
-        #print(scores)
-        y_set = scores[0:dataset_size]
+        x_set = np.column_stack((sentences_A, sentences_B))
+        y_set = scores
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
 
@@ -370,12 +378,10 @@ class Native_DataGenerator_for_SemanticSimilarityNetwork_STS(Sequence):
 
 
 class Native_DataGenerator_for_SemanticSimilarityNetwork_SICK(Sequence):
-    def __init__(self, batch_size, dataset_size):
+    def __init__(self, batch_size):
         sentences_A, sentences_B, labels = read_sick_data('train')
-        x_set = np.column_stack((sentences_A[0:dataset_size], sentences_B[0:dataset_size]))
-        #scores = minmax_scale(scores, feature_range=(0, 0.99))
-        #print(scores)
-        y_set = labels[0:dataset_size]
+        x_set = np.column_stack((sentences_A, sentences_B))
+        y_set = labels
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
 
@@ -398,3 +404,58 @@ class Native_DataGenerator_for_SemanticSimilarityNetwork_SICK(Sequence):
 
         return [input_A, input_B], batch_y
 
+
+class Native_DataGenerator_for_UnificationNetwork_SICK(Sequence):
+    def __init__(self, batch_size):
+        sentences_A, sentences_B, labels = read_sick_data('train')
+        x_set = np.column_stack((sentences_A, sentences_B))
+        y_set = labels
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        embedded_sentences_A, embedded_sentences_B, word_tensors_A, word_tensors_B, word_tensors_A_r, word_tensors_B_r, \
+        tensor_masks, tensor_masks_r = [], [], [], [], [], [], [], []
+        for sample in batch_x:
+            embedded_sentences_A.append(get_ready_vector(sample[0]))
+            embedded_sentences_B.append(get_ready_vector(sample[1]))
+
+            a, a_r, am, am_r = get_ready_tensors(sample[0])
+            b, b_r, bm, bm_r = get_ready_tensors(sample[1])
+            mask = np.logical_or(am, bm) * 1
+            mask_r = np.logical_or(am_r, bm_r) * 1
+
+            a = np.repeat(a, [MAX_TEXT_WORD_LENGTH], axis=0)
+            a = np.reshape(a, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+            a_r = np.repeat(a_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+            a_r = np.reshape(a_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+            b = np.expand_dims(b, axis=0)
+            b = np.repeat(b, [MAX_TEXT_WORD_LENGTH], axis=0)
+            b = np.reshape(b, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+            b_r = np.expand_dims(b_r, axis=0)
+            b_r = np.repeat(b_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+            b_r = np.reshape(b_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+            mask = np.repeat(mask, [MAX_TEXT_WORD_LENGTH], axis=0)
+            mask_r = np.repeat(mask_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+
+            word_tensors_A.append(a)
+            word_tensors_B.append(b)
+            word_tensors_A_r.append(a_r)
+            word_tensors_B_r.append(b_r)
+            tensor_masks.append(mask)
+            tensor_masks_r.append(mask_r)
+
+        return [np.array(embedded_sentences_A),
+                np.array(embedded_sentences_B),
+                np.arraay(word_tensors_A),
+                np.array(word_tensors_B),
+                np.array(word_tensors_A_r),
+                np.array(word_tensors_B_r),
+                np.array(tensor_masks),
+                np.array(tensor_masks_r)], batch_y

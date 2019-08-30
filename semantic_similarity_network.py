@@ -246,7 +246,7 @@ if TRAIN:
                               write_graph=True, write_grads=False, write_images=False, embeddings_freq=0,
                               embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None,
                               update_freq='epoch')
-    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork_SICK(batch_size=BATCH_SIZE, dataset_size=dataset_size)
+    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork_SICK(batch_size=BATCH_SIZE)
     K.get_session().run(tf.local_variables_initializer())
     network.fit_generator(generator=data_generator,validation_data=val_data,shuffle=True, epochs=epochs, workers=1, use_multiprocessing=False,
                         callbacks=[reduce_lr, tensorboard])

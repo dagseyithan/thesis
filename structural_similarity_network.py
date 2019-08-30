@@ -4,19 +4,20 @@ from keras.models import Model, load_model
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, LambdaCallback
 import keras.backend as K
+import tensorflow as tf
 from config import configurations
 import numpy as np
-from encoder import encode_word, convert_to_tensor
+from texttovector import get_ready_tensors
 import time
 
 DIM = 9
 EPSILON = configurations.EPSILON
 BATCH_SIZE = configurations.BATCH_SIZE
-ALPHABET_LENGTH = configurations.ALPHABET_LENGTH #54
-MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH
-MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH #60
+ALPHABET_LENGTH = configurations.ALPHABET_LENGTH #30
+MAX_TEXT_WORD_LENGTH = configurations.MAX_TEXT_WORD_LENGTH #30
+MAX_WORD_CHARACTER_LENGTH = configurations.MAX_WORD_CHARACTER_LENGTH #30
 WORD_TO_WORD_COMBINATIONS = MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH
-WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM) #360
+WORD_TENSOR_DEPTH = int((ALPHABET_LENGTH * MAX_WORD_CHARACTER_LENGTH) / DIM) #100
 ENCODER_EMBEDDING_DIM = 4
 
 
@@ -24,10 +25,9 @@ class EncodingLayer(Layer):
     def __init__(self, num_outputs):
         super(EncodingLayer, self).__init__()
         self.num_outputs = num_outputs
-        self.model = load_model(r'C:\Users\seyit\PycharmProjects\thesis\trained_models\model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
+        self.model = load_model(r'.\pretrained_submodels\model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
 
     def build(self, input_shape):
-        super(EncodingLayer, self).build(input_shape)
         layer_weights = self.model.get_layer('dense_1').get_weights()
         self.dense_1 = Dense(90, weights=[layer_weights[0], layer_weights[1]])
         layer_weights = self.model.get_layer('dense_2').get_weights()
@@ -35,6 +35,7 @@ class EncodingLayer(Layer):
         layer_weights = self.model.get_layer('dense_3').get_weights()
         self.dense_3 = Dense(4, weights=[layer_weights[0], layer_weights[1]])
         self.relu = ReLU(max_value=1.0)
+        super(EncodingLayer, self).build(input_shape)
 
     def call(self, input):
         x = self.dense_1(input)
@@ -55,15 +56,15 @@ class ConvolutionalLayer(Layer):
         self.num_outputs = num_outputs
         self.num_filters = 50
         self.kernel_size = (2, 2)
-        self.model = load_model(r'C:\Users\seyit\PycharmProjects\thesis\trained_models\model_structuralsimilarity_similarityspace3x320190730170704.h5')
+        self.model = load_model(r'.\pretrained_submodels\model_structuralsimilarity_similarityspace3x320190730170704.h5')
 
     def build(self, input_shape):
-        super(ConvolutionalLayer, self).build(input_shape)
         layer_weights = self.model.get_layer('conv2d_1').get_weights()
         self.conv2d_1 = Conv2D(filters=self.num_filters, kernel_size=self.kernel_size, input_shape=(1, 2, 2),
                                data_format='channels_first', use_bias=True, activation='relu', padding='valid',
                                weights=[layer_weights[0], layer_weights[1]])
         self.reshape = Reshape((1, 2, 2))
+        super(ConvolutionalLayer, self).build(input_shape)
 
     def call(self, input):
         out = []
@@ -76,6 +77,7 @@ class ConvolutionalLayer(Layer):
         out = K.reshape(out, (BATCH_SIZE, int(WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS), self.num_filters))
         return out
 
+
     def compute_output_shape(self, input_shape):
         return (input_shape[0], input_shape[1], self.num_filters)
 
@@ -84,10 +86,9 @@ class MLP(Layer):
     def __init__(self, num_outputs):
         super(MLP, self).__init__()
         self.num_outputs = num_outputs
-        self.model = load_model(r'C:\Users\seyit\PycharmProjects\thesis\trained_models\model_structuralsimilarity_similarityspace3x320190730170704.h5')
+        self.model = load_model(r'.\pretrained_submodels\model_structuralsimilarity_similarityspace3x320190730170704.h5')
 
     def build(self, input_shape):
-        super(MLP, self).build(input_shape)
         layer_weights = self.model.get_layer('dense_1').get_weights()
         self.dense_1 = Dense(100, activation='relu', weights=[layer_weights[0], layer_weights[1]])
         layer_weights = self.model.get_layer('dense_2').get_weights()
@@ -98,6 +99,7 @@ class MLP(Layer):
         self.dense_4 = Dense(5, activation='relu', weights=[layer_weights[0], layer_weights[1]])
         layer_weights = self.model.get_layer('dense_5').get_weights()
         self.dense_5  = Dense(1, activation='relu', weights=[layer_weights[0], layer_weights[1]])
+        super(MLP, self).build(input_shape)
 
     def call(self, input):
         out = []
@@ -109,12 +111,13 @@ class MLP(Layer):
             x = self.dense_4(x)
             x = self.dense_5(x)
             out.append(x)
+
         out = K.stack(out, axis=0)
         out = K.reshape(out, (BATCH_SIZE, MAX_TEXT_WORD_LENGTH * MAX_TEXT_WORD_LENGTH, WORD_TENSOR_DEPTH))
         return out
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0], input_shape[1], 1)
+        return (input_shape[0], input_shape[1], WORD_TENSOR_DEPTH)
 
 
 class NonZeroMaskMatrixMean(Layer):
@@ -132,7 +135,7 @@ class NonZeroMaskMatrixMean(Layer):
         for i in range(BATCH_SIZE):
             out.append(K.sum(matrices[i,:,:], axis=-1) / (K.sum(mask[i,:,:], axis=-1) + EPSILON))
         out = K.stack(out, axis=0)
-        out = K.reshape(out, (input[0].shape[0], MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
+        out = K.reshape(out, (BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
         return out
 
     def compute_output_shape(self, input_shape):
@@ -173,7 +176,7 @@ def StructuralSimilarityNetwork():
     convolutional_layer = ConvolutionalLayer(num_outputs = (WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, 50))
     nonzero_mask_matrix_mean = NonZeroMaskMatrixMean((BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
     matrix_mean = MatrixMean((BATCH_SIZE, MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH))
-    mlp = MLP(num_outputs = (WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, 1))
+    mlp = MLP(num_outputs = (WORD_TENSOR_DEPTH * WORD_TO_WORD_COMBINATIONS, WORD_TENSOR_DEPTH))
     encoding_layer.trainable = False
     convolutional_layer.trainable = False
     mlp.trainable = False
@@ -206,6 +209,47 @@ def StructuralSimilarityNetwork():
 
 model = StructuralSimilarityNetwork()
 model.summary()
+
+
+print('prepearing...')
+a, a_r, am, am_r = get_ready_tensors('When company reported that it terminated Sequent''s Unix contract for improper transfer of source code and development methods into Linux')
+b, b_r, bm, bm_r = get_ready_tensors('When said it terminated Sequent''s contract due to improper transfer of the company''s source code and development methods into Linux.')
+mask = np.logical_or(am, bm)*1
+mask_r = np.logical_or(am_r, bm_r)*1
+
+
+
+
+a = np.repeat(a, [MAX_TEXT_WORD_LENGTH], axis=0)
+a = np.reshape(a, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+a_r = np.repeat(a_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+a_r = np.reshape(a_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+b = np.expand_dims(b, axis=0)
+b = np.repeat(b, [MAX_TEXT_WORD_LENGTH], axis=0)
+b = np.reshape(b, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+b_r = np.expand_dims(b_r, axis=0)
+b_r = np.repeat(b_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+b_r = np.reshape(b_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+mask = np.repeat(mask, [MAX_TEXT_WORD_LENGTH], axis=0)
+mask_r = np.repeat(mask_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+
+
+a = np.expand_dims(a, axis=0)
+a = np.repeat(a, BATCH_SIZE, axis=0)
+a_r = np.expand_dims(a_r, axis=0)
+a_r = np.repeat(a_r, BATCH_SIZE, axis=0)
+b = np.expand_dims(b, axis=0)
+b = np.repeat(b, BATCH_SIZE, axis=0)
+b_r = np.expand_dims(b_r, axis = 0)
+b_r = np.repeat(b_r, BATCH_SIZE, axis=0)
+mask = np.expand_dims(mask, axis=0)
+mask = np.repeat(mask, BATCH_SIZE, axis=0)
+mask_r = np.expand_dims(mask_r, axis=0)
+mask_r = np.repeat(mask_r, BATCH_SIZE, axis=0)
+print('prepearing done...')
+print('predicting')
+model.predict_on_batch([a, a_r, b, b_r, mask, mask_r])
+print('predicting done')
 '''
 model = StructuralSimilarityNetwork()
 model.summary()

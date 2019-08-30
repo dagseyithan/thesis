@@ -61,10 +61,41 @@ def get_ready_vector_on_batch(texts, padding = True, embedder = EMBEDDER, batch_
         return texts_embbedings
 
 
-def get_ready_tensor(word, return_reverse=True):
-    m, m_r = encode_word(word, return_reverse=return_reverse)
-    t = convert_to_tensor(m)
-    t_r = convert_to_tensor(m_r)
+def get_ready_tensors(sentence):
+    sentence = tu.pre_process_single_return(str(sentence))
+    sentence_word_length = len(sentence.split())
 
+    tensors = []
+    masks = []
+    tensors_r = []
+    masks_r = []
+    words = sentence.split()
+    for i in range(0, MAX_TEXT_WORD_LENGTH):
+        if i < len(words):
+            m, m_r = encode_word(words[i])
+        else:
+            m, m_r = encode_word(' ') #padding
+        t, t_mask = convert_to_tensor(m)
+        t_r, t_r_mask = convert_to_tensor(m_r)
+        tensors.append(t)
+        tensors_r.append(t_r)
+        masks.append(t_mask)
+        masks_r.append(t_r_mask)
+
+    return np.array(tensors), np.array(tensors_r), np.array(masks), np.array(masks_r)
+
+'''
+t, t_r, m, m_r = get_ready_tensors('all is well')
+print(t.shape)
+print(t_r.shape)
+
+t_r = np.repeat(t_r, [30], axis=0)
+print(t_r.shape)
+t = np.repeat(np.expand_dims(t, axis=0), [30], axis=0)
+print(t.shape)
+t = np.reshape(t, (90, 360, 3, 3))
+print(t.shape)
+
+'''
 
 
