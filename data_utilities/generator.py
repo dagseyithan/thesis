@@ -8,7 +8,10 @@ from sklearn.preprocessing import minmax_scale
 from structural import get_encoded_similarity
 from keras.models import load_model
 from config import configurations
+from multiprocessing.dummy import Pool as ThreadPool
 import pandas as pd
+
+pool = ThreadPool(16)
 
 COMBINATION_COUNT = 1944
 
@@ -420,42 +423,37 @@ class Native_DataGenerator_for_UnificationNetwork_SICK(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        embedded_sentences_A, embedded_sentences_B, word_tensors_A, word_tensors_B, word_tensors_A_r, word_tensors_B_r, \
-        tensor_masks, tensor_masks_r = [], [], [], [], [], [], [], []
-        for sample in batch_x:
-            embedded_sentences_A.append(get_ready_vector(sample[0]))
-            embedded_sentences_B.append(get_ready_vector(sample[1]))
+        prepared_batch = np.array(pool.map(prepare_batch, batch_x))
 
-            a, a_r, am, am_r = get_ready_tensors(sample[0])
-            b, b_r, bm, bm_r = get_ready_tensors(sample[1])
-            mask = np.logical_or(am, bm) * 1
-            mask_r = np.logical_or(am_r, bm_r) * 1
+        return [prepared_batch[:, 0],
+                prepared_batch[:, 1],
+                prepared_batch[:, 2],
+                prepared_batch[:, 3],
+                prepared_batch[:, 4],
+                prepared_batch[:, 5],
+                prepared_batch[:, 6],
+                prepared_batch[:, 7]], batch_y
 
-            a = np.repeat(a, [MAX_TEXT_WORD_LENGTH], axis=0)
-            a = np.reshape(a, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
-            a_r = np.repeat(a_r, [MAX_TEXT_WORD_LENGTH], axis=0)
-            a_r = np.reshape(a_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
-            b = np.expand_dims(b, axis=0)
-            b = np.repeat(b, [MAX_TEXT_WORD_LENGTH], axis=0)
-            b = np.reshape(b, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
-            b_r = np.expand_dims(b_r, axis=0)
-            b_r = np.repeat(b_r, [MAX_TEXT_WORD_LENGTH], axis=0)
-            b_r = np.reshape(b_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
-            mask = np.repeat(mask, [MAX_TEXT_WORD_LENGTH], axis=0)
-            mask_r = np.repeat(mask_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+def prepare_batch(sample):
+    embedded_sentence_A = get_ready_vector(sample[0])
+    embedded_sentence_B = get_ready_vector(sample[1])
 
-            word_tensors_A.append(a)
-            word_tensors_B.append(b)
-            word_tensors_A_r.append(a_r)
-            word_tensors_B_r.append(b_r)
-            tensor_masks.append(mask)
-            tensor_masks_r.append(mask_r)
+    a, a_r, am, am_r = get_ready_tensors(sample[0])
+    b, b_r, bm, bm_r = get_ready_tensors(sample[1])
+    mask = np.logical_or(am, bm) * 1
+    mask_r = np.logical_or(am_r, bm_r) * 1
 
-        return [np.array(embedded_sentences_A),
-                np.array(embedded_sentences_B),
-                np.arraay(word_tensors_A),
-                np.array(word_tensors_B),
-                np.array(word_tensors_A_r),
-                np.array(word_tensors_B_r),
-                np.array(tensor_masks),
-                np.array(tensor_masks_r)], batch_y
+    a = np.repeat(a, [MAX_TEXT_WORD_LENGTH], axis=0)
+    a = np.reshape(a, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+    a_r = np.repeat(a_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+    a_r = np.reshape(a_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+    b = np.expand_dims(b, axis=0)
+    b = np.repeat(b, [MAX_TEXT_WORD_LENGTH], axis=0)
+    b = np.reshape(b, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+    b_r = np.expand_dims(b_r, axis=0)
+    b_r = np.repeat(b_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+    b_r = np.reshape(b_r, (WORD_TO_WORD_COMBINATIONS * WORD_TENSOR_DEPTH, 9))
+    mask = np.repeat(mask, [MAX_TEXT_WORD_LENGTH], axis=0)
+    mask_r = np.repeat(mask_r, [MAX_TEXT_WORD_LENGTH], axis=0)
+
+    return embedded_sentence_A, embedded_sentence_B, a, b, a_r, b_r, mask, mask_r
