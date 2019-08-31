@@ -5,17 +5,12 @@ from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, LambdaCallback, EarlyStopping, ReduceLROnPlateau
 import keras.backend as K
 from config import configurations
-from data_utilities.generator import Native_DataGenerator_for_UnificationNetwork_SICK, \
-    Native_ValidationDataGenerator_for_UnificationNetwork_SICK, Native_DataGenerator_for_UnificationNetwork_MSR, \
-    Native_ValidationDataGenerator_for_UnificationNetwork_MSR, Native_DataGenerator_for_UnificationNetwork_STS, \
-    Native_ValidationDataGenerator_for_UnificationNetwork_STS, Native_DataGenerator_for_SemanticSimilarityNetwork_STS, \
-    Native_ValidationDataGenerator_for_SemanticSimilarityNetwork_STS, Native_DataGenerator_for_SemanticSimilarityNetwork_SICK, \
-    Native_ValidationDataGenerator_for_SemanticSimilarityNetwork_SICK, Native_DataGenerator_for_SemanticSimilarityNetwork_MSR, \
-    Native_ValidationDataGenerator_for_SemanticSimilarityNetwork_MSR
+from data_utilities.generator import Native_DataGenerator_for_SemanticSimilarityNetwork_STS, \
+    Native_DataGenerator_for_SemanticSimilarityNetwork_SICK, Native_DataGenerator_for_SemanticSimilarityNetwork_MSR
 import numpy as np
 from texttovector import get_ready_vector, get_ready_vector_on_batch
 import time
-from data_utilities.datareader import read_sts_data, read_sick_data
+from data_utilities.datareader import read_sts_data, read_sick_data, read_msr_data
 from sklearn.preprocessing import minmax_scale
 import tensorflow as tf
 import os
@@ -108,7 +103,7 @@ class MLPScore(Layer):
         self.dense_2 = Dense(1800, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
         self.dense_3 = Dense(900, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
         self.dense_4 = Dense(300, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
-        self.dense_5 = Dense(2, activation='softmax', kernel_initializer='glorot_uniform', use_bias=True)
+        self.dense_5 = Dense(1, activation='sigmoid', kernel_initializer='glorot_uniform', use_bias=True)
 
     def call(self, input):
         x = self.dense_1(input)
@@ -119,7 +114,7 @@ class MLPScore(Layer):
         return x
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0], 2)
+        return (input_shape[0], 1)
 
 
 def SemanticSimilarityNetwork():
@@ -150,7 +145,7 @@ def SemanticSimilarityNetwork():
     #MLP_pooled_2D_2x2 = MLPConv(num_outputs=(1,))
     #MLP_pooled_2D_3x3 = MLPConv(num_outputs=(1,))
     #MLP_pooled_lstms = MLPLSTM(num_outputs=(1,))
-    MLP_score = MLPScore(num_outputs=(2,))
+    MLP_score = MLPScore(num_outputs=(1,))
 
 
     def bi_lstms_network():
@@ -219,40 +214,44 @@ def SemanticSimilarityNetwork():
 
 
 network = SemanticSimilarityNetwork()
-network.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy', metrics=['accuracy', tf_pearson])
+network.compile(optimizer=Adam(lr=0.001), loss='mean_squared_error', metrics=['mean_absolute_error', tf_pearson])
 network.summary()
-model_head = 'model_semanticsimilarity'
+model_head = 'model_semanticsimilaritynetwork'
 time = time.strftime("%Y%m%d%H%M%S")
-dset = 'MSR'
+dset = 'STS'
 dataset_size = 5000
-test_size = 1700
-epochs = 50
+test_size = 1300
+epochs = 100
 model_name = model_head + '/' + configurations.EMBEDDER+str(EMBEDDING_LENGTH) + '_dset=' + dset + '_bsize=' + str(BATCH_SIZE) +'_ep=' + str(epochs)+  '_act=' + selected_activation + '_slen=' + str(configurations.MAX_TEXT_WORD_LENGTH) \
              + '_dsize=' + str(dataset_size)+ '_tsize=' + str(test_size)+ '_' + time + '.h5'
 
+sentences_A, sentences_B, labels = read_sts_data('test')
+sentences_A = np.array([get_ready_vector(sentence) for sentence in sentences_A])
+sentences_B = np.array([get_ready_vector(sentence) for sentence in sentences_B])
+scores = minmax_scale(labels, feature_range=(0, 0.99))
+
+val_data = [[sentences_A, sentences_B], scores]
 
 
 
 if TRAIN:
-
+    #epoch_end_callback = LambdaCallback(on_epoch_end=epoch_test)
     reduce_lr = ReduceLROnPlateau(monitor='loss', patience=5, factor=0.1, verbose=1, min_lr=0.0001)
-
-    if not os.path.exists('./logs/'+  model_head):
-        os.mkdir('./logs/'+  model_head)
+    #checkpoint_callback = ModelCheckpoint(
+        #filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
+    #os.mkdir('/logs/'+  model_name)
     tensorboard = TensorBoard(log_dir='./logs/' + model_name,
                               histogram_freq=0,
                               batch_size=BATCH_SIZE,
                               write_graph=True, write_grads=False, write_images=False, embeddings_freq=0,
                               embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None,
                               update_freq='epoch')
-    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork_MSR(batch_size=BATCH_SIZE)
-    validation_generator = Native_ValidationDataGenerator_for_SemanticSimilarityNetwork_MSR(batch_size=BATCH_SIZE)
+    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork_STS(batch_size=BATCH_SIZE)
     K.get_session().run(tf.local_variables_initializer())
-    network.fit_generator(generator=data_generator,validation_data=validation_generator,shuffle=True,
-                          epochs=epochs, workers=32, use_multiprocessing=True,
+    network.fit_generator(generator=data_generator,validation_data=val_data,shuffle=True, epochs=epochs, workers=12, use_multiprocessing=True,
                         callbacks=[reduce_lr, tensorboard])
-    if not os.path.exists('./trained_models/' + model_head):
-        os.mkdir('./trained_models/' + model_head)
+    if not os.path.exists('trained_models/' + model_head):
+        os.mkdir('trained_models/' + model_head)
     network.save('./trained_models/' + model_name + '.h5')
 else:
     #network = load_model('trained_models\model_independent_2_02_RegularRNN_Fasttext_mixedmargin.h5')

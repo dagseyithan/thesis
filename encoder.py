@@ -79,6 +79,8 @@ def encode_word(word, return_reverse = True):
         except KeyError:
             word_matrix[letter['a'], position] = 0
             word_r_matrix[letter['a'], position] = 0
+        except IndexError:
+            continue
     if return_reverse:
         return word_matrix, word_r_matrix
     else:

@@ -25,7 +25,7 @@ class EncodingLayer(Layer):
     def __init__(self, num_outputs):
         super(EncodingLayer, self).__init__()
         self.num_outputs = num_outputs
-        self.model = load_model(r'.\pretrained_submodels\model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
+        self.model = load_model(r'./pretrained_submodels/model_structuralsimilarity_autoencoder3x3_4dim_embeddings_encoder.h5')
 
     def build(self, input_shape):
         layer_weights = self.model.get_layer('dense_1').get_weights()
@@ -56,7 +56,7 @@ class ConvolutionalLayer(Layer):
         self.num_outputs = num_outputs
         self.num_filters = 50
         self.kernel_size = (2, 2)
-        self.model = load_model(r'.\pretrained_submodels\model_structuralsimilarity_similarityspace3x320190730170704.h5')
+        self.model = load_model(r'./pretrained_submodels/model_structuralsimilarity_similarityspace3x320190730170704.h5')
 
     def build(self, input_shape):
         layer_weights = self.model.get_layer('conv2d_1').get_weights()
@@ -86,7 +86,7 @@ class MLP(Layer):
     def __init__(self, num_outputs):
         super(MLP, self).__init__()
         self.num_outputs = num_outputs
-        self.model = load_model(r'.\pretrained_submodels\model_structuralsimilarity_similarityspace3x320190730170704.h5')
+        self.model = load_model(r'./pretrained_submodels/model_structuralsimilarity_similarityspace3x320190730170704.h5')
 
     def build(self, input_shape):
         layer_weights = self.model.get_layer('dense_1').get_weights()
@@ -206,7 +206,7 @@ def StructuralSimilarityNetwork():
     model.summary()
 
     return model
-
+'''
 model = StructuralSimilarityNetwork()
 model.summary()
 
@@ -250,7 +250,7 @@ print('prepearing done...')
 print('predicting')
 model.predict_on_batch([a, a_r, b, b_r, mask, mask_r])
 print('predicting done')
-'''
+
 model = StructuralSimilarityNetwork()
 model.summary()
 model.compile(optimizer=Adam(lr=0.001), loss='mean_squared_error')

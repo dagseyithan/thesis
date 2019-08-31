@@ -1,7 +1,7 @@
 import numpy as np
 
 def loadGloveModel():
-    f = open(r'C:\Users\seyit\PycharmProjects\thesis\glove\glove.6B.50d.txt','r', encoding='utf-8')
+    f = open(r'/home/s_dag/PycharmProjects/thesis/glove/glove.6B.50d.txt','r', encoding='utf-8')
     model = {}
     for line in f:
         splitLine = line.split()

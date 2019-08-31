@@ -28,46 +28,10 @@ selected_activation='relu'
 
 def tf_pearson(y_true, y_pred):
     return tf.contrib.metrics.streaming_pearson_correlation(y_pred, y_true)[1]
-    '''
-    x = y_true
-    y = y_pred
-    mx = K.mean(x)
-    my = K.mean(y)
-    xm, ym = x-mx, y-my
-    r_num = K.sum(tf.multiply(xm,ym))
-    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
-    r = r_num / r_den
 
-    r = K.maximum(K.minimum(r, 1.0), -1.0)
-    return 1 - K.square(r)
-    '''
 TRAIN = True
 
 
-
-class MLPScore(Layer):
-    def __init__(self, num_outputs):
-        super(MLPScore, self).__init__()
-        self.num_outputs = num_outputs
-
-    def build(self, input_shape):
-        super(MLPScore, self).build(input_shape)
-        self.dense_1 = Dense(5400, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
-        self.dense_2 = Dense(1800, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
-        self.dense_3 = Dense(900, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
-        self.dense_4 = Dense(300, activation=selected_activation, kernel_initializer='glorot_uniform', use_bias=True)
-        self.dense_5 = Dense(3, activation='softmax', kernel_initializer='glorot_uniform', use_bias=True)
-
-    def call(self, input):
-        x = self.dense_1(input)
-        x = self.dense_2(x)
-        x = self.dense_3(x)
-        x = self.dense_4(x)
-        x = self.dense_5(x)
-        return x
-
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], 3)
 
 
 def SemanticSimilarityNetwork_Uni():
@@ -93,7 +57,6 @@ def SemanticSimilarityNetwork_Uni():
     averagePool2D_2x2 = AveragePooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_first',
                                          name='averagePool2D_2x2')
     expand_dims = Lambda(lambda x: K.expand_dims(x, axis=1))
-    MLP_score = MLPScore(num_outputs=(3,))
 
 
     def bi_lstms_network():
@@ -146,47 +109,3 @@ def SemanticSimilarityNetwork_Uni():
 
     return model
 
-
-network = SemanticSimilarityNetwork()
-network.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy', metrics=['accuracy', tf_pearson])
-network.summary()
-model_head = 'model_semanticsimilaritynetwork_alt'
-time = time.strftime("%Y%m%d%H%M%S")
-dset = 'SICK'
-dataset_size = 9000
-test_size = 1000
-epochs = 100
-model_name = model_head + '/' + configurations.EMBEDDER+str(EMBEDDING_LENGTH) + '_dset=' + dset + '_bsize=' + str(BATCH_SIZE) +'_ep=' + str(epochs)+  '_act=' + selected_activation + '_slen=' + str(configurations.MAX_TEXT_WORD_LENGTH) \
-             + '_dsize=' + str(dataset_size)+ '_tsize=' + str(test_size)+ '_' + time + '.h5'
-
-sentences_A, sentences_B, labels = read_sick_data('test')
-sentences_A = np.array([get_ready_vector(sentence) for sentence in sentences_A])
-sentences_B = np.array([get_ready_vector(sentence) for sentence in sentences_B])
-scores = labels
-
-val_data = [[sentences_A, sentences_B], scores]
-
-
-
-if TRAIN:
-    #epoch_end_callback = LambdaCallback(on_epoch_end=epoch_test)
-    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=5, factor=0.1, verbose=1, min_lr=0.0001)
-    #checkpoint_callback = ModelCheckpoint(
-        #filepath='trained_models/model_independent_2_02_RegularRNN_Fasttext_mixedmargin_update00.h5', period=1)
-    #os.mkdir('/logs/'+  model_name)
-    tensorboard = TensorBoard(log_dir='./logs/' + model_name,
-                              histogram_freq=0,
-                              batch_size=BATCH_SIZE,
-                              write_graph=True, write_grads=False, write_images=False, embeddings_freq=0,
-                              embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None,
-                              update_freq='epoch')
-    data_generator = Native_DataGenerator_for_SemanticSimilarityNetwork_SICK(batch_size=BATCH_SIZE)
-    K.get_session().run(tf.local_variables_initializer())
-    network.fit_generator(generator=data_generator,validation_data=val_data,shuffle=True, epochs=epochs, workers=1, use_multiprocessing=False,
-                        callbacks=[reduce_lr, tensorboard])
-    #if not os.path.exists('trained_models/' + model_head):
-        #os.mkdir('trained_models/' + model_head)
-    network.save('./trained_models/' + model_name + '.h5')
-else:
-    #network = load_model('trained_models\model_independent_2_02_RegularRNN_Fasttext_mixedmargin.h5')
-    network.summary()
