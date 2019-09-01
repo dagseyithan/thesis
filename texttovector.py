@@ -1,9 +1,10 @@
 import numpy as np
 import text_utilities as tu
 #from elmo import __get_elmo_sentence_embedding, __get_elmo_sentence_embedding_on_batch
-from glove import __get_glove_sentence_embedding
+#from glove import __get_glove_sentence_embedding
 from fasttext import __get_fasttext_sentence_embedding
 from encoder import encode_word, convert_to_tensor
+from structural import get_mean_convolutional_similarity
 from config.configurations import MAX_TEXT_WORD_LENGTH, EMBEDDER, BATCH_SIZE, EMBEDDING_LENGTH
 
 
@@ -21,7 +22,8 @@ def get_ready_vector(text, padding = True, embedder = EMBEDDER):
     elif embedder ==  'FASTTEXT':
         embedding = __get_fasttext_sentence_embedding(text)
     else:
-        embedding = __get_glove_sentence_embedding(text)
+        print('glove!!!')
+        #embedding = __get_glove_sentence_embedding(text)
 
     if padding:
         padded = np.zeros((MAX_TEXT_WORD_LENGTH, EMBEDDING_LENGTH), dtype=float)
@@ -60,6 +62,35 @@ def get_ready_vector_on_batch(texts, padding = True, embedder = EMBEDDER, batch_
     else:
         return texts_embbedings
 
+def get_similarity_matrix(a, b):
+    a = tu.pre_process_single_return(a)
+    b = tu.pre_process_single_return(b)
+    a = np.array(a.split())
+    b = np.array(b.split())
+    len_a = a.shape[0]
+    len_b = b.shape[0]
+    extend = 0
+    if len_a > len_b:
+        extend = len_a
+        b = np.pad(b, (0, len_a - len_b), mode='constant', constant_values='&&')
+    elif len_b > len_a:
+        extend = len_b
+        a = np.pad(a, (0, len_b - len_a), mode='constant', constant_values='&&')
+
+    b = np.expand_dims(b, axis=0)
+    a = np.repeat(a, extend, axis=0)
+    a = np.reshape(a, (extend, extend))
+    b = np.repeat(b, extend, axis=0)
+    scores = []
+    padded_mat = np.zeros((MAX_TEXT_WORD_LENGTH, MAX_TEXT_WORD_LENGTH), dtype=float)
+    for i in range(0, extend):
+        for j in range(0, extend):
+            scores.append(get_mean_convolutional_similarity(a[i][j], b[i][j]))
+    scores = np.array(scores)
+    scores = np.reshape(scores, (extend, extend))
+
+    padded_mat[:scores.shape[0],:scores.shape[1]] = scores
+    return padded_mat
 
 def get_ready_tensors(sentence):
     sentence = tu.pre_process_single_return(str(sentence))

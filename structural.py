@@ -27,7 +27,7 @@ def get_convolutional_similarity(worda, wordb, n = 2, stride = 2):
                 total+= score
     #print(total)
     #print(count)
-    return total/count
+    return total/count if count is not 0.0 else 0.0
 
 def get_encoded_similarity(a, b, n = 3):
 
@@ -53,19 +53,18 @@ def get_encoded_similarity(a, b, n = 3):
 
 
 def get_mean_convolutional_similarity(worda, wordb):
-    #print(get_convolutional_similarity(worda, wordb, n=2, stride=2))
-    #print(get_convolutional_similarity(worda, wordb, n=3, stride=3))
-    #print(get_convolutional_similarity(worda, wordb, n=4, stride=4))
+    return (get_convolutional_similarity(worda, wordb, n=3, stride=3) \
+           + get_convolutional_similarity(worda[::-1], wordb[::-1], n=3, stride=3)) * 0.5
 
-    return get_convolutional_similarity(worda, wordb, n=3, stride=3)
-
-a = get_mean_convolutional_similarity('bearbeitung', 'bebeitung')
+'''
+a = get_mean_convolutional_similarity('bearbeitun', 'bearbeitung')
+print(a)
 #print(get_mean_convolutional_similarity('Awomanisdicingsomepeeledpotatoescutintothickstrips', 'Awomanischoppingapeeledpotatointoslices'))
 #print(get_mean_convolutional_similarity('bearbeitung', 'bebeitung'))
 #print(get_mean_convolutional_similarity('gnutiebraeb', 'gnutiebeb'))
 #print(get_mean_convolutional_similarity('rel   ', 'relhok'))
 
-'''
+
 print(get_encoded_similarity('bearbeitung', 'ableitung'))
 print(get_encoded_similarity('abteilung', 'ableitung'))
 print(get_encoded_similarity('gesellschaft', 'freundschaft'))
@@ -79,5 +78,6 @@ print(get_encoded_similarity('freundschaft', 'schaft'))
 print(get_encoded_similarity('freundschaft', 'shcaft'))
 print(get_encoded_similarity('freundschaft', 'freund'))
 print(get_encoded_similarity('freund', 'freund'))
-'''
+
 #get_convolutional_similarity('aba', 'aba', n=2, stride=2)
+'''
