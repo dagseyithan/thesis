@@ -128,7 +128,7 @@ time = time.strftime("%Y%m%d%H%M%S")
 dset = 'tarent'
 dataset_size = 48000
 test_size = 1000
-epochs = 500
+epochs = 50
 model_name = model_head + '/' + configurations.EMBEDDER+str(EMBEDDING_LENGTH) + '_dset=' + dset + '_bsize=' + str(BATCH_SIZE) +'_ep=' + str(epochs)+  '_act=' + selected_activation + '_slen=' + str(configurations.MAX_TEXT_WORD_LENGTH) \
              + '_dsize=' + str(dataset_size)+ '_tsize=' + str(test_size)+ '_' + time + '.h5'
 
@@ -137,7 +137,7 @@ model_name = model_head + '/' + configurations.EMBEDDER+str(EMBEDDING_LENGTH) + 
 
 if TRAIN:
 
-    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=5, factor=0.1, verbose=1, min_lr=0.0001)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', patience=3, factor=0.1, verbose=1, min_lr=0.0001)
 
     if not os.path.exists('./logs/'+  model_head):
         os.mkdir('./logs/'+  model_head)
@@ -151,7 +151,7 @@ if TRAIN:
     validation_generator = Native_ValidationDataGenerator_for_UnificationNetwork_TM(batch_size=BATCH_SIZE)
     K.get_session().run(tf.local_variables_initializer())
     network.fit_generator(generator=data_generator,shuffle=True, validation_data=validation_generator,
-                          epochs=epochs, workers=2, use_multiprocessing=False,
+                          epochs=epochs, workers=30, use_multiprocessing=True,
                         callbacks=[reduce_lr, tensorboard])
     if not os.path.exists('./trained_models/' + model_head):
         os.mkdir('./trained_models/' + model_head)

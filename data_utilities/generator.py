@@ -8,7 +8,7 @@ from sklearn.preprocessing import minmax_scale
 from structural import get_encoded_similarity
 from keras.models import load_model
 from config import configurations
-from multiprocessing.dummy import Pool as ThreadPool
+import multiprocessing
 import pandas as pd
 
 
@@ -742,11 +742,14 @@ class Native_ValidationDataGenerator_for_SemanticSimilarityNetwork_TM(Sequence):
 class Native_DataGenerator_for_UnificationNetwork_TM(Sequence):
     def __init__(self, batch_size):
         data = read_dataset_data('train')
+        anch_pos_sim = np.load('./anch_pos_sim_train.npy')
+        anch_neg_sim = np.load('./anch_neg_sim_train.npy')
         anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), \
                            data[data.columns[2]].to_numpy()
+
         x_set = np.column_stack((anchor, pos, neg))
         y_set = np.zeros((x_set.shape[0]), dtype=float)
-        self.x, self.y = x_set, y_set
+        self.x, self.y, self.x_set_sim_ap, self.x_set_sim_an = x_set, y_set, anch_pos_sim, anch_neg_sim
         self.batch_size = batch_size
 
     def __len__(self):
@@ -754,27 +757,26 @@ class Native_DataGenerator_for_UnificationNetwork_TM(Sequence):
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_x_sim_ap= self.x_set_sim_ap[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_x_sim_an = self.x_set_sim_an[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        anchor_in, pos_in, neg_in, anch_pos_sim, anch_neg_sim = [], [], [], [], []
-        for sample in batch_x:
-            anchor_in.append(get_ready_vector(sample[0]))
-            pos_in.append(get_ready_vector(sample[1]))
-            neg_in.append(get_ready_vector(sample[2]))
-            anch_pos_sim.append(get_similarity_matrix(sample[0], sample[1]))
-            anch_neg_sim.append(get_similarity_matrix(sample[0], sample[2]))
+        anchor_in = np.array([get_ready_vector(sample[0]) for sample in batch_x])
+        pos_in = np.array([get_ready_vector(sample[1]) for sample in batch_x])
+        neg_in = np.array([get_ready_vector(sample[2]) for sample in batch_x])
 
-
-        return [np.array(anchor_in), np.array(pos_in), np.array(neg_in), np.array(anch_pos_sim), np.array(anch_neg_sim)], batch_y
+        return [anchor_in, pos_in, neg_in, batch_x_sim_ap, batch_x_sim_an], batch_y
 
 class Native_ValidationDataGenerator_for_UnificationNetwork_TM(Sequence):
     def __init__(self, batch_size):
         data = read_dataset_data('test')
+        anch_pos_sim = np.load('./anch_pos_sim_test.npy')
+        anch_neg_sim = np.load('./anch_neg_sim_test.npy')
         anchor, pos, neg = data[data.columns[0]].to_numpy(), data[data.columns[1]].to_numpy(), \
                            data[data.columns[2]].to_numpy()
         x_set = np.column_stack((anchor, pos, neg))
         y_set = np.zeros((x_set.shape[0]), dtype=float)
-        self.x, self.y = x_set, y_set
+        self.x, self.y, self.x_set_sim_ap, self.x_set_sim_an = x_set, y_set, anch_pos_sim, anch_neg_sim
         self.batch_size = batch_size
 
     def __len__(self):
@@ -782,18 +784,15 @@ class Native_ValidationDataGenerator_for_UnificationNetwork_TM(Sequence):
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_x_sim_ap = self.x_set_sim_ap[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_x_sim_an = self.x_set_sim_an[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        anchor_in, pos_in, neg_in, anch_pos_sim, anch_neg_sim = [], [], [], [], []
-        for sample in batch_x:
-            anchor_in.append(get_ready_vector(sample[0]))
-            pos_in.append(get_ready_vector(sample[1]))
-            neg_in.append(get_ready_vector(sample[2]))
-            anch_pos_sim.append(get_similarity_matrix(sample[0], sample[1]))
-            anch_neg_sim.append(get_similarity_matrix(sample[0], sample[2]))
+        anchor_in = np.array([get_ready_vector(sample[0]) for sample in batch_x])
+        pos_in = np.array([get_ready_vector(sample[1]) for sample in batch_x])
+        neg_in = np.array([get_ready_vector(sample[2]) for sample in batch_x])
 
-
-        return [np.array(anchor_in), np.array(pos_in), np.array(neg_in), np.array(anch_pos_sim), np.array(anch_neg_sim)], batch_y
+        return [anchor_in, pos_in, neg_in, batch_x_sim_ap, batch_x_sim_an], batch_y
 
 def prepare_batch(sample):
     embedded_sentence_A = get_ready_vector(sample[0])
